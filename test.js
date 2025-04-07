@@ -1,6 +1,10 @@
-const teleport_server	= require('teleport-server')
-const client_manager	= require('teleport-server/client/client_manager');
-const scene				= require("teleport-server/scene/scene");
+const teleport_server	= require('teleportxr')
+const client_manager	= require('teleportxr/client/client_manager');
+const scene				= require("teleportxr/scene/scene");
+const open = require('open');
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 
 // Create a scene, so we can fill it with stuff.
 var sc					= new scene.Scene();
@@ -31,15 +35,28 @@ cm.SetClientPostCreationCallback(onClientPostCreate);
 // Having set up the callbacks, we start the server running.
 teleport_server.initServer();
 
-// Create a simple http server for scene management:
-var http = require('http');
-http.createServer(function (req, res) {
-  res.writeHead(200, {'Content-Type': 'text/html'});
-  res.write("<div>");
-  	res.write(sc.writeState());
-  res.write("</div>");
-  res.write("<div>");
-  	res.write(cm.writeState());
-  res.write("</div>");
-  res.end();
-}).listen(9000); 
+// Create a simple http server for scene management and display.
+// This will be accessible at localhost:9000 via a browser.
+// The dashboard uses the writeState functions of the teleport server classes
+// to send html summaries of their state to the dashboard.
+const express_app = express()
+const express_server = http.createServer(express_app);
+const express_io = socketIo(express_server);
+const dashboard_port = 9000
+
+express_app.use(express.static('public'));
+
+express_io.on('connection', (socket) => {
+	console.log('A dashboard client connected');
+	setInterval(() => {
+	  socket.emit('scene', sc.writeState());
+	  socket.emit('client_manager', cm.writeState());
+	}, 1000);
+});
+  
+express_server.listen(dashboard_port, () => {
+  console.log(`Dashboard server running on port ${dashboard_port}`);
+});
+
+// opens the url in the default browser 
+open('http://localhost:9000');

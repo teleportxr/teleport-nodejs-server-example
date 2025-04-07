@@ -1,0 +1,24 @@
+{
+  "name": "server-example",
+  "version": "1.0.0",
+  "description": "A simple example of a Teleport server in node.js.",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/teleportxr/teleport-nodejs-server-example.git"
+  },
+  "author": "Roderick Kennedy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/teleportxr/teleport-nodejs-server-example/issues"
+  },
+  "homepage": "https://github.com/teleportxr/teleport-nodejs-server-example#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "open": "^8.4.2",
+    "socket.io": "^4.8.1"
+  }
+}

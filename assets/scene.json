@@ -1,11 +1,14 @@
 {
-	"buggy":{
-		"pose":{
-			"position":[0,0,0]
-			,"orientation":[0,0,0,1]
-		},
-		"components":[
-			{"type":"mesh"
-			,"url":"https://github.com/KhronosGroup/glTF-Sample-Models/raw/refs/heads/main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
+	"environment":{"background_texture":"localhost/environment_cubemap.ktx2"},
+	"nodes":{
+		"buggy":{
+			"pose":{
+				"position":[0,0,0]
+				,"orientation":[0,0,0,1]
+			},
+			"components":[
+				{"type":"mesh"
+				,"url":"https://github.com/KhronosGroup/glTF-Sample-Models/raw/refs/heads/main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
+		}
 	}
 }

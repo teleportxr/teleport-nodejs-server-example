@@ -1,0 +1,20 @@
+body {
+	background-color: silver;
+	font-family: Helvetica, sans-serif;
+  }
+  
+  div {
+  }
+  
+  p {
+	background-color: yellow;
+  }
+  
+  #scene {
+	background-color: lightblue;
+  }
+  
+  #client_manager {
+	background-color: rgb(239, 239, 176);
+	font-family: monospace;
+  }
