@@ -44,7 +44,7 @@ const express_server = http.createServer(express_app);
 const express_io = socketIo(express_server);
 const dashboard_port = 9000
 
-express_app.use(express.static('public'));
+express_app.use(express.static('dashboard_public'));
 
 express_io.on('connection', (socket) => {
 	console.log('A dashboard client connected');
@@ -60,3 +60,8 @@ express_server.listen(dashboard_port, () => {
 
 // opens the url in the default browser 
 open('http://localhost:9000');
+
+// Create a second http server, the Content Server. This is to 
+// Create a simple http server for scene management:
+const fileserver = require('./file-server.js');
+fileserver.startStaticFileServer("http_resources");

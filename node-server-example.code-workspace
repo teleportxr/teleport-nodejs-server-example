@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "node_modules/teleport-server"
+			"path": "node_modules/teleportxr"
 		}
 	],
 	"settings": {}
