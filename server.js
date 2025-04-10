@@ -42,9 +42,7 @@ teleport_server.initServer();
 const express_app = express()
 const express_server = http.createServer(express_app);
 const express_io = socketIo(express_server);
-dashboard_port = 9000
-if(process.env.DASHBOARD_PORT)
-	dashboard_port=parseInt(process.env.DASHBOARD_PORT, 10)
+dashboard_port = process.env.PORT || 9000;
 
 express_app.use(express.static('dashboard_public'));
 
