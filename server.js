@@ -42,7 +42,9 @@ teleport_server.initServer();
 const express_app = express()
 const express_server = http.createServer(express_app);
 const express_io = socketIo(express_server);
-const dashboard_port = 9000
+dashboard_port = 9000
+if(process.env.DASHBOARD_PORT)
+	dashboard_port=parseInt(process.env.DASHBOARD_PORT, 10)
 
 express_app.use(express.static('dashboard_public'));
 
@@ -58,8 +60,9 @@ express_server.listen(dashboard_port, () => {
   console.log(`Dashboard server running on port ${dashboard_port}`);
 });
 
-// opens the url in the default browser 
-open('http://localhost:9000');
+// opens the url in the default browser if running locally (port 9000)
+if(dashboard_port==9000)
+	open('http://localhost:9000');
 
 // Create a second http server, the Content Server. This is to 
 // Create a simple http server for scene management:
