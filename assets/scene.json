@@ -1,5 +1,5 @@
 {
-	"environment":{"background_texture":"http://localhost:8080/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2"},
+	"environment":{"background_texture":"/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2"},
 	"nodes":{
 		"buggy":{
 			"pose":{
