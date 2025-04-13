@@ -11,8 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/server.js",
-            "args": "--trace-warnings",
+            "program": "E:/Code/Teleport/teleport-nodejs-server-test/server.js",
 			"runtimeArgs": ["--preserve-symlinks"]
         }
     ]
