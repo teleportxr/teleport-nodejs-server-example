@@ -7,4 +7,16 @@ SPDX-FileCopyrightText = [
     "2024 Jane Doe <jane@example.com>",
     "2024 John Doe <john@example.com>"
 ]
+SPDX-License-Identifier = "MIT"
+
+# A simple glob of all files
+[[annotations]]
+path = "http_resources/*"
+SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["http_resources/test_preview_sphere.glb"]
+precedence = "override"
+SPDX-FileCopyrightText = "2019 Michael Zhang, Download <https://sketchfab.com/3d-models/test-preview-sphere-718ad05b44b849b4922aaf91d6156d65>"
 SPDX-License-Identifier = "CC-BY-4.0"
