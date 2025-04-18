@@ -1,0 +1,10 @@
+version = 1
+
+# All files in resources/vid/, with multiple copyright holders
+[[annotations]]
+path = "http_resources/*"
+SPDX-FileCopyrightText = [
+    "2024 Jane Doe <jane@example.com>",
+    "2024 John Doe <john@example.com>"
+]
+SPDX-License-Identifier = "CC-BY-4.0"

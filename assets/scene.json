@@ -1,5 +1,7 @@
 {
-	"environment":{"background_texture":"/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2"},
+	"environment":{"background_texture":"/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2",
+				"diffuse_cubemap":"/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2",
+				"specular_cubemap":"/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2"}
 	"nodes":{
 		"buggy":{
 			"pose":{

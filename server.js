@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Teleport XR Ltd <contact@teleportxr.io>
+//
+// SPDX-License-Identifier: MIT
+
 const teleport_server	= require('teleportxr')
 const client_manager	= require('teleportxr/client/client_manager');
 const scene				= require("teleportxr/scene/scene");
