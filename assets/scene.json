@@ -1,7 +1,7 @@
 {
 	"environment":{"background_texture":"/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2",
 				"diffuse_cubemap":"/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2",
-				"specular_cubemap":"/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2"}
+				"specular_cubemap":"/specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2"},
 	"nodes":{
 		"buggy":{
 			"pose":{
@@ -12,6 +12,16 @@
 			"components":[
 				{"type":"mesh"
 				,"url":"https://github.com/KhronosGroup/glTF-Sample-Models/raw/refs/heads/main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
+		},
+		"sphere":{
+			"pose":{
+				"position":[0,1,1]
+				,"orientation":[0,0,0,1]
+				,"scale":[1.0,1.0,1.0]
+			},
+			"components":[
+				{"type":"mesh"
+				,"url":"/test_preview_sphere.glb"}]
 		}
 	}
 }
