@@ -1,0 +1,159 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: teleport-nodejs-server-test
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-2b322dde-addf-4360-b529-5f303e1bfdb2
+Creator: Person: Anonymous ()
+Creator: Organization: Anonymous ()
+Creator: Tool: reuse-2.1.0
+Created: 2025-04-18T22:24:45Z
+CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-524e9aa1b3b41d02f5f96a982bf2ecaf
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-3677df560520f76e357f7d95f854eea0
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-4fd8e45cc7695d15d7ac02c455c10c82
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-132fbf229df767be684d5d60899eb479
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-a9bd72a3ceb6d8927d09d884977f5fb0
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-d0562f5621b25938abf36aa2a6d578e3
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9944e80f7f5cb6c6c5948e908c1028ab
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-cbd9ddc098b75dfb5e2b4d15aa3cb033
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-b02143ed028a3e99cc1f9b1a2c27668f
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-498ebd98dc0221988ab90f096e2cfa86
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-1b1c5e07dbabc34cc4f30575625116fb
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9a687f05aa26ca15740a891ad9948f2c
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-91bbda9418cae40dedc83593b555a8d1
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-41aa4d2377a96a74e88d19fbd794dfc8
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-9b7f437e6fb685f1fd1249a0cd0cc1e1
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-ba4a2725d06319c2fcce1600bd141bc9
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-d25f04cebe711b99829d7becc81c9ea0
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-0a3ca7ec3c7f00955b1a45ffc579d4b4
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-a07c3fe09586a00525212b20a6557aab
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-955a12da00dbfc5c135099d2992c053c
+Relationship: SPDXRef-DOCUMENT describes SPDXRef-863bc4189eda7decc09edaa5194cfa67
+
+FileName: ./.clang-format
+SPDXID: SPDXRef-524e9aa1b3b41d02f5f96a982bf2ecaf
+FileChecksum: SHA1: 7233e95b6439611b8969bf83b3f37deaf1f1d0de
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./.gitignore
+SPDXID: SPDXRef-3677df560520f76e357f7d95f854eea0
+FileChecksum: SHA1: 9d8d673ec863f6974b43df88434ccf20ac4be864
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./.vscode\launch.json
+SPDXID: SPDXRef-4fd8e45cc7695d15d7ac02c455c10c82
+FileChecksum: SHA1: 06cd5d737648a221926fe5aa59eae50a3283d0c3
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./README.md
+SPDXID: SPDXRef-132fbf229df767be684d5d60899eb479
+FileChecksum: SHA1: 5efbb889f9a730e2de27901b6680534c954ad030
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./REUSE.toml
+SPDXID: SPDXRef-a9bd72a3ceb6d8927d09d884977f5fb0
+FileChecksum: SHA1: 1c9c506c57bd13235ad3b3f8b14ab69a730e684b
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./assets\scene.json
+SPDXID: SPDXRef-d0562f5621b25938abf36aa2a6d578e3
+FileChecksum: SHA1: d0f5c317efa1db0a65dcfa57c5cf98322bdfc149
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./dashboard_public\index.html
+SPDXID: SPDXRef-9944e80f7f5cb6c6c5948e908c1028ab
+FileChecksum: SHA1: 9200a4713c38619ef6b084f4285688aa46a93cd3
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./dashboard_public\style.css
+SPDXID: SPDXRef-cbd9ddc098b75dfb5e2b4d15aa3cb033
+FileChecksum: SHA1: c4631464a2f903776de8821a3eb2559d07345dc0
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./file-server.js
+SPDXID: SPDXRef-b02143ed028a3e99cc1f9b1a2c27668f
+FileChecksum: SHA1: b6146acace171082a8ac39021aa174b0083b9d18
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\REUSE.toml
+SPDXID: SPDXRef-498ebd98dc0221988ab90f096e2cfa86
+FileChecksum: SHA1: f2cf02d88118fda4ca38231c28bfd5b78d96333e
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2
+SPDXID: SPDXRef-1b1c5e07dbabc34cc4f30575625116fb
+FileChecksum: SHA1: 2f5aac9c5676845db6a2383fdd9f9e8de08e093f
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2
+SPDXID: SPDXRef-9a687f05aa26ca15740a891ad9948f2c
+FileChecksum: SHA1: 5de1578cc0c38d35b75b328c514479de1074c01f
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\environment_cubemap.ktx2
+SPDXID: SPDXRef-91bbda9418cae40dedc83593b555a8d1
+FileChecksum: SHA1: 7ef933350ccfcfdf317c5674e5127c04be923d6c
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\environment_cubemapx.ktx2
+SPDXID: SPDXRef-41aa4d2377a96a74e88d19fbd794dfc8
+FileChecksum: SHA1: 90b4d9a83539692bb6dd760abcde0331d4cf85c0
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2
+SPDXID: SPDXRef-9b7f437e6fb685f1fd1249a0cd0cc1e1
+FileChecksum: SHA1: 907ee4a370399347164078fb76cb32251f4a3847
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./http_resources\test_preview_sphere.glb
+SPDXID: SPDXRef-ba4a2725d06319c2fcce1600bd141bc9
+FileChecksum: SHA1: f2c0a45017f3abd7964bd67278d4e16c3bad1181
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./link.ps1
+SPDXID: SPDXRef-d25f04cebe711b99829d7becc81c9ea0
+FileChecksum: SHA1: beb8da5080662eebbb2a5a131e1ce3e2164d2813
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./node-server-example.code-workspace
+SPDXID: SPDXRef-0a3ca7ec3c7f00955b1a45ffc579d4b4
+FileChecksum: SHA1: 14da59081a55c884e661426afb0d6146abd75133
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./package-lock.json
+SPDXID: SPDXRef-a07c3fe09586a00525212b20a6557aab
+FileChecksum: SHA1: ed384ac4435d0e060e4f312ae9219c6dcf577664
+LicenseConcluded: NOASSERTION
+FileCopyrightText: NONE
+
+FileName: ./package.json
+SPDXID: SPDXRef-955a12da00dbfc5c135099d2992c053c
+FileChecksum: SHA1: d388fc18be388e58c7333aee58065299228cf67d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2025 Teleport XR Ltd <contact@teleportxr.io></text>
+
+FileName: ./server.js
+SPDXID: SPDXRef-863bc4189eda7decc09edaa5194cfa67
+FileChecksum: SHA1: 6f97a2ffd77cc4195545734f1ef402c6f1207841
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: MIT
+FileCopyrightText: <text>SPDX-FileCopyrightText: 2025 Teleport XR Ltd <contact@teleportxr.io></text>

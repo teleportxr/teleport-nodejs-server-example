@@ -1,7 +1,7 @@
 {
-	"environment":{"background_texture":"/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2",
-				"diffuse_cubemap":"/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2",
-				"specular_cubemap":"/specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2"},
+	"environment":{"background_texture":"/envCloudyCubemap.ktx2",
+				"diffuse_cubemap":"/diffuseCloudyCubemap.ktx2",
+				"specular_cubemap":"/specularCloudyCubemap.ktx2"},
 	"nodes":{
 		"buggy":{
 			"pose":{
@@ -21,7 +21,22 @@
 			},
 			"components":[
 				{"type":"mesh"
-				,"url":"/test_preview_sphere.glb"}]
+				,"url":"/test_preview_sphere.glb"},
+				{"type":"canvas"
+				,"url":"test_canvas"}]
+		}
+	},
+	"font_atlases":[
+		{
+			"path": "/venti.font_atlas",
+			"font_texture_path": "/venti.ktx2"
+		}
+	],
+	"canvases":{
+		"test_canvas":{
+			"font": "/venti.font_atlas"
+			,"lineHeight": 32
+			,"content": "Testing the text canvas\nWhat can we write?"
 		}
 	}
 }

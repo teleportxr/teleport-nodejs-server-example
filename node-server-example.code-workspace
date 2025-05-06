@@ -7,5 +7,7 @@
 			"path": "node_modules/teleportxr"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"workbench.colorTheme": "2077"
+	}
 }
