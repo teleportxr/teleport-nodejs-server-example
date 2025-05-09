@@ -21,9 +21,27 @@
 			},
 			"components":[
 				{"type":"mesh"
-				,"url":"/test_preview_sphere.glb"},
+				,"url":"/test_preview_sphere.glb"}]
+		},
+		"sign":{
+			"pose":{
+				"position":[0,3,3]
+				,"orientation":[0.707,0,0,0.707]
+				,"scale":[0.5,0.5,1.0]
+			},
+			"components":[
 				{"type":"canvas"
 				,"url":"test_canvas"}]
+		},
+		"sign2":{
+			"pose":{
+				"position":[0,3,3]
+				,"orientation":[0.707,0,0,0.707]
+				,"scale":[0.5,0.5,1.0]
+			},
+			"components":[
+				{"type":"canvas"
+				,"url":"test_canvas2"}]
 		}
 	},
 	"font_atlases":[
@@ -35,8 +53,13 @@
 	"canvases":{
 		"test_canvas":{
 			"font": "/venti.font_atlas"
-			,"lineHeight": 32
-			,"content": "Testing the text canvas\nWhat can we write?"
+			,"lineHeight": 1.0
+			,"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
+		},
+		"test_canvas2":{
+			"font": "/venti.font_atlas"
+			,"lineHeight": 1.0
+			,"content": "A different test for the text canvas"
 		}
 	}
 }

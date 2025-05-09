@@ -4,10 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "node_modules/teleportxr"
+			"path": "./node_modules/teleportxr"
 		}
 	],
 	"settings": {
-		"workbench.colorTheme": "2077"
+		"workbench.colorTheme": "Default Dark Modern"
 	}
 }

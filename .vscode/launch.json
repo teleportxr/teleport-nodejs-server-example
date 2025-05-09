@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "E:/Code/Teleport/teleport-nodejs-server-test/server.js",
+            "program": "server.js",
 			"runtimeArgs": ["--preserve-symlinks"]
         }
     ]
