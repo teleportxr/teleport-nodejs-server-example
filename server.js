@@ -19,7 +19,10 @@ var sc					= new scene.Scene();
 // Load our scene.json into the scene.
 const path				= require('path');
 const assetsPath		= path.join(__dirname,'assets');
-sc.Load(path.join(assetsPath,'scene.json'));
+sc.SetAssetsPath(assetsPath);
+const publicPath		= path.join(__dirname,'http_resources');
+sc.SetPublicPath(publicPath);
+sc.Load('scene.json');
 
 // The client manager allows us to set callbacks for when client events happen:
 var cm					= client_manager.getInstance();
