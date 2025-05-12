@@ -48,18 +48,24 @@
 		{
 			"path": "/venti.font_atlas",
 			"font_texture_path": "/venti.ktx2"
+		},
+		{
+			"font": "/BKANT.TTF"
 		}
 	],
 	"canvases":{
 		"test_canvas":{
-			"font": "/venti.font_atlas"
+			"font": "/venti.font_atlas2"
 			,"lineHeight": 1.0
 			,"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
 		},
 		"test_canvas2":{
-			"font": "/venti.font_atlas"
+			"font": "/BKANT.TTF"
 			,"lineHeight": 1.0
-			,"content": "A different test for the text canvas"
+			,"content": ["A different test for the text canvas",
+						"Can we newline this way?",
+						"Yes, just put an array of strings instead",
+						"of a single string!"]
 		}
 	}
 }
