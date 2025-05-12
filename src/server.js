@@ -6,10 +6,11 @@ const teleport_server	= require('teleportxr')
 const client_manager	= require('teleportxr/client/client_manager');
 const scene				= require("teleportxr/scene/scene");
 const resources			= require("teleportxr/scene/resources");
-const open = require('open');
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
+const open				= require('open');
+const express			= require('express');
+const http				= require('http');
+const socketIo			= require('socket.io');
+const custom_player		= require('./custom-player.js');
 
 const WebSocketServer = require("ws");
 
@@ -18,9 +19,9 @@ var sc					= new scene.Scene();
 
 // Load our scene.json into the scene.
 const path				= require('path');
-const assetsPath		= path.join(__dirname,'assets');
+const assetsPath		= path.join(__dirname,'../assets');
 sc.SetAssetsPath(assetsPath);
-const publicPath		= path.join(__dirname,'http_resources');
+const publicPath		= path.join(__dirname,'../http_resources');
 sc.SetPublicPath(publicPath);
 sc.Load('scene.json');
 
@@ -30,6 +31,7 @@ var cm					= client_manager.getInstance();
 // This is our app's callback for when a new client is to be created.
 // It must return the origin uid for the client.
 function createNewClient(clientID) {
+	var player = new custom_player.CustomPlayer();
 	var origin_uid		=sc.CreateNode("Player");
 	return origin_uid;
 }

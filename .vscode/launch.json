@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "server.js",
+            "program": "src/server.js",
 			"runtimeArgs": ["--preserve-symlinks"]
         }
     ]
