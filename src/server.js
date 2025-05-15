@@ -4,6 +4,7 @@
 
 const teleport_server	= require('teleportxr')
 const client_manager	= require('teleportxr/client/client_manager');
+const client			= require('teleportxr/client/client');
 const scene				= require("teleportxr/scene/scene");
 const resources			= require("teleportxr/scene/resources");
 const open				= require('open');
@@ -29,13 +30,19 @@ sc.Load('scene.json');
 var cm					= client_manager.getInstance();
 
 // This is our app's callback for when a new client is to be created.
+function createNewClient(clientID,sigSend) {
+	var c = new custom_player.CustomClient(clientID, sigSend);
+	return c;
+}
+cm.SetCreateClientCallback(createNewClient);
+
 // It must return the origin uid for the client.
-function createNewClient(clientID) {
-	var player = new custom_player.CustomPlayer();
+function createNewClientNode(clientID) {
+	var player = new custom_player.CustomPlayerNode();
 	var origin_uid		=sc.CreateNode("Player");
 	return origin_uid;
 }
-cm.SetNewClientCallback(createNewClient);
+cm.SetNewClientNodeCallback(createNewClientNode);
 
 // This will be called AFTER a client has been created, so we can access it from the clientManager.
 function onClientPostCreate(clientID) {
@@ -70,6 +77,13 @@ http_server.on('upgrade', function upgrade(request, socket, head) {
 resources.Resource.SetDefaultPathRoot(`http://localhost:${signaling_port}`)
 
 express_app.use(express.static('dashboard_public'));
+
+function logErrors (err, req, res, next) {
+	console.error(err.stack)
+	next(err)
+  }
+  
+express_app.use(logErrors)
 /*
 express_io.on('connection', (socket) => {
 	console.log('A dashboard client connected');

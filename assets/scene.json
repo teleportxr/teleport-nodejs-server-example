@@ -15,7 +15,17 @@
 		},
 		"sphere":{
 			"pose":{
-				"position":[0,1,1]
+				"position":[0,2,1]
+				,"orientation":[0,0,0,1]
+				,"scale":[1.0,1.0,1.0]
+			},
+			"components":[
+				{"type":"mesh"
+				,"url":"/test_preview_sphere.glb"}]
+		},
+		"sphere2":{
+			"pose":{
+				"position":[4,2,1]
 				,"orientation":[0,0,0,1]
 				,"scale":[1.0,1.0,1.0]
 			},
