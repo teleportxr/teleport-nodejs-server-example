@@ -48,6 +48,7 @@ cm.SetNewClientNodeCallback(createNewClientNode);
 function onClientPostCreate(clientID) {
 	var client			=cm.GetClient(clientID);
 	client.SetScene(sc);
+	client.PostSceneInit();
 }
 cm.SetClientPostCreationCallback(onClientPostCreate);
 
