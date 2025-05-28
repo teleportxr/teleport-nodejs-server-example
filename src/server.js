@@ -7,7 +7,6 @@ const client_manager	= require('teleportxr/client/client_manager');
 const client			= require('teleportxr/client/client');
 const scene				= require("teleportxr/scene/scene");
 const resources			= require("teleportxr/scene/resources");
-const open				= require('open');
 const express			= require('express');
 const http				= require('http');
 const socketIo			= require('socket.io');
