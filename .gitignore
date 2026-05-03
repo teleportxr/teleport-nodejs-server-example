@@ -134,3 +134,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Generated MSDF font atlas artifacts (regenerated on server startup)
+assets/*.png
+assets/*.font_atlas_sdf
+http_resources/*.png
