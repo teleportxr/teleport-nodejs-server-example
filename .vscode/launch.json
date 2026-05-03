@@ -7,12 +7,29 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "NodeJS Test",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "src/server.js",
-			"runtimeArgs": ["--preserve-symlinks"]
+            "name": "Launch server.js",
+            "program": "${workspaceFolder}/src/server.js",
+            "cwd": "${workspaceFolder}",
+            "runtimeArgs": ["--preserve-symlinks"],
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch via npm start",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**"]
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to Node (9229)",
+            "port": 9229,
+            "skipFiles": ["<node_internals>/**"]
         }
     ]
 }
