@@ -94,7 +94,4 @@ express_io.on('connection', (socket) => {
 });*/
   
 
-// opens the url in the default browser if running locally (port 9000)
-//if(!process.env.PORT)
-//	open(`http://localhost:${signaling_port}`);
 console.log(`Dashboard: http://localhost:${signaling_port}`);
