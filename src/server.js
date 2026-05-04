@@ -54,7 +54,25 @@ cm.SetClientPostCreationCallback(onClientPostCreate);
 // Having set up the callbacks, we start the server running.
 
 const signaling_port = process.env.PORT || 8081;
-const wss=teleport_server.initServer();
+
+let iceServers;
+if (process.env.TELEPORT_ICE_SERVERS)
+{
+	try
+	{
+		const parsed = JSON.parse(process.env.TELEPORT_ICE_SERVERS);
+		if (Array.isArray(parsed))
+			iceServers = parsed;
+		else
+			console.error("TELEPORT_ICE_SERVERS must be a JSON array; ignoring.");
+	}
+	catch (e)
+	{
+		console.error("Failed to parse TELEPORT_ICE_SERVERS: "+e.toString()+"; ignoring.");
+	}
+}
+
+const wss=teleport_server.initServer(undefined, { iceServers });
 
 // Create a simple http server for scene management and display.
 // This will be accessible at localhost:9000 via a browser.
