@@ -183,11 +183,14 @@ if (explicitResourceUrl) {
 if (useAutoDetection && !explicitResourceUrl) {
 	const originalSetDefaultPathRoot = resources.Resource.SetDefaultPathRoot.bind(resources.Resource);
 	const checkAndUpdateResourceUrl = () => {
+		const autoDetectedHost = signaling.getClientHostHeader();
+		console.log(`[URL Update Check] Auto-detected host: "${autoDetectedHost}", Current URL: ${currentResourceUrl}`);
 		const newResourceUrl = getResourceUrl();
 		if (newResourceUrl !== currentResourceUrl) {
 			currentResourceUrl = newResourceUrl;
 			originalSetDefaultPathRoot(currentResourceUrl);
 			console.log(`Updated resource URL to: ${currentResourceUrl}`);
+			clearInterval(urlCheckInterval);
 		}
 	};
 
@@ -195,6 +198,8 @@ if (useAutoDetection && !explicitResourceUrl) {
 	setTimeout(checkAndUpdateResourceUrl, 100);
 	// Also check periodically in case there's a race condition
 	const urlCheckInterval = setInterval(() => {
+		const autoDetectedHost = signaling.getClientHostHeader();
+		console.log(`[URL Update Check] Auto-detected host: "${autoDetectedHost}", Current URL: ${currentResourceUrl}`);
 		const newResourceUrl = getResourceUrl();
 		if (newResourceUrl !== currentResourceUrl) {
 			currentResourceUrl = newResourceUrl;
