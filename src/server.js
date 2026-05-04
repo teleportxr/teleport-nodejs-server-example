@@ -7,19 +7,20 @@
 // ============================================================================
 // The server automatically configures resource URLs for clients based on:
 //
-// 1. TELEPORT_RESOURCE_URL environment variable (if set)
+// 1. TELEPORT_RESOURCE_URL environment variable (if set to a URL)
 //    Used for explicit configuration or CDN URLs
 //    Example: TELEPORT_RESOURCE_URL=https://cdn.example.com
+//    Special value: TELEPORT_RESOURCE_URL=auto (enables auto-detection)
 //
-// 2. Auto-detection from client's Host header (if not explicitly set)
+// 2. Auto-detection from client's Host header (default or when set to "auto")
 //    When a client connects, its Host header is captured and used
 //    This works correctly with:
 //    - Direct connections: Uses client's address
 //    - Reverse proxies: Uses X-Forwarded-Host if available, or Host header
 //    - Custom domains: Uses whatever domain the client used to connect
 //
-// 3. Fallback to localhost (default, for local development only)
-//    Used when no explicit URL is set and no client has connected yet
+// 3. Fallback to localhost (used during startup before client connects)
+//    Used when auto-detection is enabled but no client has connected yet
 //
 // The resource URL is sent to clients so they know where to download
 // resources (meshes, textures, etc.) from the Express HTTP server.
@@ -81,19 +82,27 @@ const signaling_port = process.env.PORT || 8081;
 
 // Resource URL configuration:
 // 1. TELEPORT_RESOURCE_URL environment variable (highest priority) - for CDN or explicit configuration
+//    Set to "auto" to use auto-detection, or provide an explicit URL like "https://cdn.example.com"
 // 2. Auto-detected from client's Host header (after first client connects)
 // 3. Fallback to localhost (for local testing only)
-const explicitResourceUrl = process.env.TELEPORT_RESOURCE_URL;
+const resourceUrlConfig = process.env.TELEPORT_RESOURCE_URL;
+const useAutoDetection = !resourceUrlConfig || resourceUrlConfig.toLowerCase() === 'auto';
+const explicitResourceUrl = (resourceUrlConfig && resourceUrlConfig.toLowerCase() !== 'auto') ? resourceUrlConfig : null;
 
 // Function to get the appropriate resource URL
 function getResourceUrl() {
+	// If explicitly configured (and not "auto"), use that
 	if (explicitResourceUrl) {
 		return explicitResourceUrl;
 	}
-	const autoDetectedHost = signaling.getClientHostHeader();
-	if (autoDetectedHost) {
-		return `http://${autoDetectedHost}`;
+	// If auto-detection is enabled (either no config or "auto" was set)
+	if (useAutoDetection) {
+		const autoDetectedHost = signaling.getClientHostHeader();
+		if (autoDetectedHost) {
+			return `http://${autoDetectedHost}`;
+		}
 	}
+	// Fallback to localhost
 	return `http://localhost:${signaling_port}`;
 }
 
@@ -164,10 +173,14 @@ http_server.on('upgrade', function upgrade(request, socket, head) {
 // Set initial resource URL
 let currentResourceUrl = getResourceUrl();
 resources.Resource.SetDefaultPathRoot(currentResourceUrl);
-console.log(`Resource URL: ${currentResourceUrl}` + (explicitResourceUrl ? ' (explicitly configured)' : ' (using localhost, will update when first client connects)'));
+if (explicitResourceUrl) {
+	console.log(`Resource URL: ${currentResourceUrl} (explicitly configured)`);
+} else {
+	console.log(`Resource URL: ${currentResourceUrl} (using auto-detection, will update when first client connects)`);
+}
 
 // Update resource URL when first client connects if auto-detection is enabled
-if (!explicitResourceUrl) {
+if (useAutoDetection && !explicitResourceUrl) {
 	const originalSetDefaultPathRoot = resources.Resource.SetDefaultPathRoot.bind(resources.Resource);
 	const checkAndUpdateResourceUrl = () => {
 		const newResourceUrl = getResourceUrl();
