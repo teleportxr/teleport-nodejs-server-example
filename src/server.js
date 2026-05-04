@@ -2,11 +2,35 @@
 //
 // SPDX-License-Identifier: MIT
 
+// ============================================================================
+// Resource URL Configuration
+// ============================================================================
+// The server automatically configures resource URLs for clients based on:
+//
+// 1. TELEPORT_RESOURCE_URL environment variable (if set)
+//    Used for explicit configuration or CDN URLs
+//    Example: TELEPORT_RESOURCE_URL=https://cdn.example.com
+//
+// 2. Auto-detection from client's Host header (if not explicitly set)
+//    When a client connects, its Host header is captured and used
+//    This works correctly with:
+//    - Direct connections: Uses client's address
+//    - Reverse proxies: Uses X-Forwarded-Host if available, or Host header
+//    - Custom domains: Uses whatever domain the client used to connect
+//
+// 3. Fallback to localhost (default, for local development only)
+//    Used when no explicit URL is set and no client has connected yet
+//
+// The resource URL is sent to clients so they know where to download
+// resources (meshes, textures, etc.) from the Express HTTP server.
+// ============================================================================
+
 const teleport_server	= require('teleportxr')
 const client_manager	= require('teleportxr/client/client_manager');
 const client			= require('teleportxr/client/client');
 const scene				= require("teleportxr/scene/scene");
 const resources			= require("teleportxr/scene/resources");
+const signaling			= require("teleportxr/signaling");
 const express			= require('express');
 const http				= require('http');
 const socketIo			= require('socket.io');
@@ -54,6 +78,24 @@ cm.SetClientPostCreationCallback(onClientPostCreate);
 // Having set up the callbacks, we start the server running.
 
 const signaling_port = process.env.PORT || 8081;
+
+// Resource URL configuration:
+// 1. TELEPORT_RESOURCE_URL environment variable (highest priority) - for CDN or explicit configuration
+// 2. Auto-detected from client's Host header (after first client connects)
+// 3. Fallback to localhost (for local testing only)
+const explicitResourceUrl = process.env.TELEPORT_RESOURCE_URL;
+
+// Function to get the appropriate resource URL
+function getResourceUrl() {
+	if (explicitResourceUrl) {
+		return explicitResourceUrl;
+	}
+	const autoDetectedHost = signaling.getClientHostHeader();
+	if (autoDetectedHost) {
+		return `http://${autoDetectedHost}`;
+	}
+	return `http://localhost:${signaling_port}`;
+}
 
 // Default STUN/TURN servers for the example. Mixes UDP, TCP and TLS transports
 // so ICE has multiple paths to try when UDP egress is blocked (e.g. Heroku).
@@ -119,7 +161,39 @@ http_server.on('upgrade', function upgrade(request, socket, head) {
   });
 });
 
-resources.Resource.SetDefaultPathRoot(`http://localhost:${signaling_port}`)
+// Set initial resource URL
+let currentResourceUrl = getResourceUrl();
+resources.Resource.SetDefaultPathRoot(currentResourceUrl);
+console.log(`Resource URL: ${currentResourceUrl}` + (explicitResourceUrl ? ' (explicitly configured)' : ' (using localhost, will update when first client connects)'));
+
+// Update resource URL when first client connects if auto-detection is enabled
+if (!explicitResourceUrl) {
+	const originalSetDefaultPathRoot = resources.Resource.SetDefaultPathRoot.bind(resources.Resource);
+	const checkAndUpdateResourceUrl = () => {
+		const newResourceUrl = getResourceUrl();
+		if (newResourceUrl !== currentResourceUrl) {
+			currentResourceUrl = newResourceUrl;
+			originalSetDefaultPathRoot(currentResourceUrl);
+			console.log(`Updated resource URL to: ${currentResourceUrl}`);
+		}
+	};
+
+	// Check after a short delay to allow WebSocket connection to be processed
+	setTimeout(checkAndUpdateResourceUrl, 100);
+	// Also check periodically in case there's a race condition
+	const urlCheckInterval = setInterval(() => {
+		const newResourceUrl = getResourceUrl();
+		if (newResourceUrl !== currentResourceUrl) {
+			currentResourceUrl = newResourceUrl;
+			originalSetDefaultPathRoot(currentResourceUrl);
+			console.log(`Updated resource URL to: ${currentResourceUrl}`);
+			clearInterval(urlCheckInterval);
+		}
+	}, 500);
+
+	// Stop checking after 10 seconds
+	setTimeout(() => clearInterval(urlCheckInterval), 10000);
+}
 
 express_app.use(express.static('dashboard_public'));
 
