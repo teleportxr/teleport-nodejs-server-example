@@ -164,6 +164,9 @@ express_app.use(express.static('http_resources'));
 const http_server = express_app.listen(signaling_port);
 // Also mount the app here
 http_server.on('upgrade', function upgrade(request, socket, head) {
+	console.log("HTTP upgrade request received");
+	console.log("  Host header: " + request.headers.host);
+	console.log("  X-Forwarded-Host header: " + request.headers['x-forwarded-host']);
 	const { pathname } = new URL(request.url, 'wss://base.url');
 	 wss.handleUpgrade(request, socket, head, function done(ws) {
 		wss.emit('connection', ws, request);
