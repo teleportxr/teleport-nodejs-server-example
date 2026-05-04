@@ -198,7 +198,7 @@ if (useAutoDetection && !explicitResourceUrl) {
 	};
 
 	// Check after a short delay to allow WebSocket connection to be processed
-	setTimeout(checkAndUpdateResourceUrl, 100);
+	setTimeout(checkAndUpdateResourceUrl, 101);
 	// Also check periodically in case there's a race condition
 	const urlCheckInterval = setInterval(() => {
 		const autoDetectedHost = signaling.getClientHostHeader();
