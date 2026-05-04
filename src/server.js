@@ -72,7 +72,17 @@ if (process.env.TELEPORT_ICE_SERVERS)
 	}
 }
 
-const wss=teleport_server.initServer(undefined, { iceServers });
+let iceTransportPolicy;
+if (process.env.TELEPORT_ICE_TRANSPORT_POLICY)
+{
+	const v = process.env.TELEPORT_ICE_TRANSPORT_POLICY;
+	if (v === 'all' || v === 'relay')
+		iceTransportPolicy = v;
+	else
+		console.error("TELEPORT_ICE_TRANSPORT_POLICY must be 'all' or 'relay'; ignoring.");
+}
+
+const wss=teleport_server.initServer(undefined, { iceServers, iceTransportPolicy });
 
 // Create a simple http server for scene management and display.
 // This will be accessible at localhost:9000 via a browser.
