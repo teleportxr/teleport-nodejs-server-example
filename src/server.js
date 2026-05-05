@@ -18,8 +18,16 @@
 //    - Direct connections: Uses client's address
 //    - Reverse proxies: Uses X-Forwarded-Host if available, or Host header
 //    - Custom domains: Uses whatever domain the client used to connect
+//    Protocol is chosen automatically: http for loopback/LAN, https for public hosts.
 //
-// 3. Fallback to localhost (used during startup before client connects)
+// 3. TELEPORT_RESOURCE_PROTOCOL environment variable (optional override)
+//    Forces the protocol used for the resource URL, regardless of the host.
+//    Accepted values: "http" or "https"
+//    Useful when the auto-detection heuristic is wrong for your network setup.
+//    Example: TELEPORT_RESOURCE_PROTOCOL=https  (force https even on a LAN)
+//             TELEPORT_RESOURCE_PROTOCOL=http   (force http even on a public host)
+//
+// 4. Fallback to localhost (used during startup before client connects)
 //    Used when auto-detection is enabled but no client has connected yet
 //
 // The resource URL is sent to clients so they know where to download
@@ -98,6 +106,66 @@ const useAutoDetection  = !resourceUrlConfig || resourceUrlConfig.toLowerCase() 
 const explicitResourceUrl =
     (resourceUrlConfig && resourceUrlConfig.toLowerCase() !== 'auto') ? resourceUrlConfig : null;
 
+// TELEPORT_RESOURCE_PROTOCOL overrides automatic http/https selection.
+// Accepted values: "http" or "https". Unset means use the auto-detection heuristic.
+const resourceProtocolOverride = (() => {
+    const v = (process.env.TELEPORT_RESOURCE_PROTOCOL || '').toLowerCase();
+    if (v === 'http' || v === 'https')
+        return v;
+    if (v)
+        console.error(
+            `TELEPORT_RESOURCE_PROTOCOL must be "http" or "https"; ignoring value "${v}".`);
+    return null;
+})();
+
+// Returns true if the given host string refers to a loopback or LAN address.
+// LAN ranges (RFC 1918 + link-local + loopback) are treated as local so the
+// example server uses plain http, while public addresses use https.
+function isLocalOrLanHost(host)
+{
+    const h = host.split(':')[0]; // strip any port
+    if (h === 'localhost' || h === '127.0.0.1' || h === '::1')
+        return true;
+    // IPv4 private/link-local ranges
+    const m = h.match(/^([0-9]+)\.([0-9]+)\.[0-9]+\.[0-9]+$/);
+    if (m)
+    {
+        const a = parseInt(m[1], 10);
+        const b = parseInt(m[2], 10);
+        if (a === 10)
+            return true; // 10.0.0.0/8
+        if (a === 172 && b >= 16 && b <= 31)
+            return true; // 172.16.0.0/12
+        if (a === 192 && b === 168)
+            return true; // 192.168.0.0/16
+        if (a === 169 && b === 254)
+            return true; // 169.254.0.0/16
+        if (a === 127)
+            return true; // 127.0.0.0/8
+    }
+    // IPv6 unique-local (fc00::/7) and link-local (fe80::/10)
+    const lower = h.toLowerCase();
+    if (lower.startsWith('fc') || lower.startsWith('fd'))
+        return true;
+    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') ||
+        lower.startsWith('feb'))
+        return true;
+    // Hostnames without a dot are typically LAN names (e.g. "myhost", "myhost.local")
+    if (!h.includes('.'))
+        return true;
+    if (lower.endsWith('.local'))
+        return true;
+    return false;
+}
+
+// Selects the protocol for a given host, respecting any TELEPORT_RESOURCE_PROTOCOL override.
+function protocolForHost(host)
+{
+    if (resourceProtocolOverride)
+        return resourceProtocolOverride;
+    return isLocalOrLanHost(host) ? 'http' : 'https';
+}
+
 // Function to get the appropriate resource URL
 function getResourceUrl()
 {
@@ -112,11 +180,12 @@ function getResourceUrl()
         const autoDetectedHost = signaling.getClientHostHeader();
         if (autoDetectedHost)
         {
-            return `http://${autoDetectedHost}`;
+            return `${protocolForHost(autoDetectedHost)}://${autoDetectedHost}`;
         }
     }
-    // Fallback to localhost
-    return `http://localhost:${signaling_port}`;
+    // Fallback to localhost (always http for local, unless overridden)
+    const protocol = resourceProtocolOverride || 'http';
+    return `${protocol}://localhost:${signaling_port}`;
 }
 
 // Default STUN/TURN servers for the example. Mixes UDP, TCP and TLS transports
