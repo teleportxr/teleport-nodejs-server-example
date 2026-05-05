@@ -121,26 +121,11 @@ function getResourceUrl()
 
 // Default STUN/TURN servers for the example. Mixes UDP, TCP and TLS transports
 // so ICE has multiple paths to try when UDP egress is blocked (e.g. Heroku).
-// Override at runtime by setting TELEPORT_ICE_SERVERS to a JSON array.
+// Override at runtime by setting TELEPORT_ICE_SERVERS to a JSON array. The
+// metered.ca TURN credentials below are placeholders; replace them with your
+// own (or set TELEPORT_ICE_SERVERS) for any non-trivial deployment.
 let iceServers = [
-    {urls : "stun:stun.l.google.com:19302"}, {urls : "turn:turn01.hubl.in?transport=udp"},
-    {urls : "turn:turn02.hubl.in?transport=tcp"},
-    {urls : "turn:numb.viagenie.ca", username : "webrtc@live.com", credential : "muazkh"}, {
-        urls : "turn:192.158.29.39:3478?transport=udp",
-        username : "28224511:1379330808",
-        credential : "JZEOEt2V3Qb0y27GRntt2u2PAYA="
-    },
-    {
-        urls : "turn:192.158.29.39:3478?transport=tcp",
-        username : "28224511:1379330808",
-        credential : "JZEOEt2V3Qb0y27GRntt2u2PAYA="
-    },
-    {urls : "turn:turn.bistri.com:80", username : "homeo", credential : "homeo"}, {
-        urls : "turn:turn.anyfirewall.com:443?transport=tcp",
-        username : "webrtc",
-        credential : "webrtc"
-    },
-    {urls : "stun:stun.relay.metered.ca:80"}, {
+    {urls : "stun:stun.l.google.com:19302"}, {urls : "stun:stun.relay.metered.ca:80"}, {
         urls : "turn:global.relay.metered.ca:80",
         username : "83c1c2d5812f27ae1744dfcc",
         credential : "5T/RNHuNmGmq1/pj"
