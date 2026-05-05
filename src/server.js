@@ -70,6 +70,10 @@ cm.SetNewClientNodeCallback(createNewClientNode);
 
 // This will be called AFTER a client has been created, so we can access it from the clientManager.
 function onClientPostCreate(clientID) {
+	// The WebSocket upgrade captured the Host header before this callback fires,
+	// so auto-detection has the data it needs. Update the resource URL now,
+	// before the client builds its SetupCommand and starts streaming resources.
+	updateResourceUrlIfNeeded();
 	var client			=cm.GetClient(clientID);
 	client.SetScene(sc);
 	client.PostSceneInit();
@@ -182,38 +186,16 @@ if (explicitResourceUrl) {
 	console.log(`Resource URL: ${currentResourceUrl} (using auto-detection, will update when first client connects)`);
 }
 
-// Update resource URL when first client connects if auto-detection is enabled
-if (useAutoDetection && !explicitResourceUrl) {
-	const originalSetDefaultPathRoot = resources.Resource.SetDefaultPathRoot.bind(resources.Resource);
-	const checkAndUpdateResourceUrl = () => {
-		const autoDetectedHost = signaling.getClientHostHeader();
-		console.log(`[URL Update Check] Auto-detected host: "${autoDetectedHost}", Current URL: ${currentResourceUrl}`);
-		const newResourceUrl = getResourceUrl();
-		if (newResourceUrl !== currentResourceUrl) {
-			currentResourceUrl = newResourceUrl;
-			originalSetDefaultPathRoot(currentResourceUrl);
-			console.log(`Updated resource URL to: ${currentResourceUrl}`);
-			clearInterval(urlCheckInterval);
-		}
-	};
-
-	// Check after a short delay to allow WebSocket connection to be processed
-	setTimeout(checkAndUpdateResourceUrl, 101);
-	// Also check periodically in case there's a race condition
-	const urlCheckInterval = setInterval(() => {
-		const autoDetectedHost = signaling.getClientHostHeader();
-		console.log(`[URL Update Check] Auto-detected host: "${autoDetectedHost}", Current URL: ${currentResourceUrl}`);
-		const newResourceUrl = getResourceUrl();
-		if (newResourceUrl !== currentResourceUrl) {
-			currentResourceUrl = newResourceUrl;
-			originalSetDefaultPathRoot(currentResourceUrl);
-			console.log(`Updated resource URL to: ${currentResourceUrl}`);
-			clearInterval(urlCheckInterval);
-		}
-	}, 500);
-
-	// Stop checking after 10 seconds
-	setTimeout(() => clearInterval(urlCheckInterval), 10000);
+// Recompute the resource URL using the current auto-detected host header.
+// Called from onClientPostCreate so the update is event-driven rather than polled.
+function updateResourceUrlIfNeeded() {
+	if (!useAutoDetection || explicitResourceUrl) return;
+	const newResourceUrl = getResourceUrl();
+	if (newResourceUrl !== currentResourceUrl) {
+		currentResourceUrl = newResourceUrl;
+		resources.Resource.SetDefaultPathRoot(currentResourceUrl);
+		console.log(`Updated resource URL to: ${currentResourceUrl}`);
+	}
 }
 
 express_app.use(express.static('dashboard_public'));
