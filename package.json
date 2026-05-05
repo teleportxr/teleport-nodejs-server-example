@@ -23,6 +23,6 @@
     "http-server": "^14.1.1",
     "open": "^8.4.2",
     "socket.io": "^4.8.1",
-    "teleportxr": "^1.0.39"
+    "teleportxr": "^1.0.40"
   }
 }
