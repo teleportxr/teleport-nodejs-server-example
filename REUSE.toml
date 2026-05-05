@@ -1,6 +1,52 @@
 version = 1
 
+# Project source and config files authored by Teleport XR Ltd
 [[annotations]]
-path = "REUSE.toml"
+path = [
+  "REUSE.toml",
+  "README.md",
+  "LICENSE",
+  "reuse.spdx",
+  ".gitignore",
+  ".clang-format",
+  ".pre-commit-config.yaml",
+  "link.ps1",
+  "node-server-example.code-workspace",
+  "package-lock.json",
+  "assets/scene.json",
+  ".vscode/launch.json",
+  ".vscode/settings.json",
+]
 SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "MIT"
+
+# Project-created 3-D assets and environment maps
+[[annotations]]
+path = [
+  "http_resources/diffuseCloudyCubemap.ktx2",
+  "http_resources/diffuseRenderTexture_-_renderTexture~~diffuseRenderTexture.ktx2",
+  "http_resources/envCloudyCubemap.ktx2",
+  "http_resources/environment_cubemap.ktx2",
+  "http_resources/environment_cubemapx.ktx2",
+  "http_resources/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2",
+  "http_resources/specularCloudyCubemap.ktx2",
+  "http_resources/specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2",
+  "http_resources/test_preview_sphere.glb",
+  "http_resources/venti.ktx2",
+  "assets/venti.font_atlas",
+]
+SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
+SPDX-License-Identifier = "MIT"
+
+# Artifacts generated from DejaVuSerif (Bitstream Vera / DejaVu lineage)
+[[annotations]]
+path = [
+  "assets/DejaVuSerif.font_atlas_sdf",
+  "assets/DejaVuSerif.png",
+  "http_resources/DejaVuSerif.png",
+]
+SPDX-FileCopyrightText = [
+  "Copyright (c) 2003 Bitstream, Inc.",
+  "Copyright (c) 2006 Tavmjong Bah",
+]
+SPDX-License-Identifier = "Bitstream-Vera"
