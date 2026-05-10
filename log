@@ -1,0 +1,2 @@
+# Copyright Teleport XR Ltd, no restrictions
+heroku logs --app teleport-example --tail
