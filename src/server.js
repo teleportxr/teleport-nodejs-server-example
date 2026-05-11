@@ -118,52 +118,20 @@ const resourceProtocolOverride = (() => {
     return null;
 })();
 
-// Returns true if the given host string refers to a loopback or LAN address.
-// LAN ranges (RFC 1918 + link-local + loopback) are treated as local so the
-// example server uses plain http, while public addresses use https.
-function isLocalOrLanHost(host)
-{
-    const h = host.split(':')[0]; // strip any port
-    if (h === 'localhost' || h === '127.0.0.1' || h === '::1')
-        return true;
-    // IPv4 private/link-local ranges
-    const m = h.match(/^([0-9]+)\.([0-9]+)\.[0-9]+\.[0-9]+$/);
-    if (m)
-    {
-        const a = parseInt(m[1], 10);
-        const b = parseInt(m[2], 10);
-        if (a === 10)
-            return true; // 10.0.0.0/8
-        if (a === 172 && b >= 16 && b <= 31)
-            return true; // 172.16.0.0/12
-        if (a === 192 && b === 168)
-            return true; // 192.168.0.0/16
-        if (a === 169 && b === 254)
-            return true; // 169.254.0.0/16
-        if (a === 127)
-            return true; // 127.0.0.0/8
-    }
-    // IPv6 unique-local (fc00::/7) and link-local (fe80::/10)
-    const lower = h.toLowerCase();
-    if (lower.startsWith('fc') || lower.startsWith('fd'))
-        return true;
-    if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') ||
-        lower.startsWith('feb'))
-        return true;
-    // Hostnames without a dot are typically LAN names (e.g. "myhost", "myhost.local")
-    if (!h.includes('.'))
-        return true;
-    if (lower.endsWith('.local'))
-        return true;
-    return false;
-}
+// TELEPORT_REQUIRE_TLS=1 makes the server reject any WebSocket upgrade whose
+// X-Forwarded-Proto is not "https". Use this on Heroku (or behind any reverse
+// proxy) to refuse plain ws:// connections that arrived on port 80.
+const requireTls               = (() => {
+    const v = (process.env.TELEPORT_REQUIRE_TLS || '').toLowerCase();
+    return v === '1' || v === 'true' || v === 'yes';
+})();
 
-// Selects the protocol for a given host, respecting any TELEPORT_RESOURCE_PROTOCOL override.
-function protocolForHost(host)
+// Strip common default ports (80 and 443) from the host string.
+// This ensures we don't produce non-standard URLs like https://hostname:80
+// when a reverse proxy passes through the original Host header incorrectly.
+function stripDefaultPort(host)
 {
-    if (resourceProtocolOverride)
-        return resourceProtocolOverride;
-    return isLocalOrLanHost(host) ? 'http' : 'https';
+    return host.replace(/:(80|443)$/, '');
 }
 
 // Function to get the appropriate resource URL
@@ -180,7 +148,14 @@ function getResourceUrl()
         const autoDetectedHost = signaling.getClientHostHeader();
         if (autoDetectedHost)
         {
-            return `${protocolForHost(autoDetectedHost)}://${autoDetectedHost}`;
+            // Protocol priority:
+            //   1. TELEPORT_RESOURCE_PROTOCOL env-var override
+            //   2. X-Forwarded-Proto header (set by reverse proxies)
+            //   3. 'http' — the server itself never terminates TLS
+            const forwardedProto = signaling.getClientProtoHeader();
+            const protocol       = resourceProtocolOverride || forwardedProto || 'http';
+            const host           = stripDefaultPort(autoDetectedHost);
+            return `${protocol}://${host}`;
         }
     }
     // Fallback to localhost (always http for local, unless overridden)
@@ -270,13 +245,27 @@ const http_server = express_app.listen(signaling_port);
 // underlying TCP connection can fall back to a normal HTTP/1.1 request that
 // Express can then serve via express.static.
 http_server.on('upgrade', function upgrade(request, socket, head) {
-    const upgradeHeader = (request.headers.upgrade || '').toLowerCase();
+    const upgradeHeader  = (request.headers.upgrade || '').toLowerCase();
+    const forwardedProto = (request.headers['x-forwarded-proto'] || '').toLowerCase();
     console.log("HTTP upgrade request received: " + upgradeHeader + " " + request.url);
     console.log("  Host header: " + request.headers.host);
     console.log("  X-Forwarded-Host header: " + request.headers['x-forwarded-host']);
+    console.log("  X-Forwarded-Proto header: " + forwardedProto);
     if (upgradeHeader !== 'websocket')
     {
         socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+        socket.destroy();
+        return;
+    }
+    // When TELEPORT_REQUIRE_TLS is set, refuse plain ws:// upgrades. Only requests
+    // forwarded by the proxy as https are accepted; clients hitting port 80 will
+    // see a 403 and must reconnect via wss:// on port 443.
+    if (requireTls && forwardedProto !== 'https')
+    {
+        console.warn("Rejecting non-TLS WebSocket upgrade (X-Forwarded-Proto=\"" + forwardedProto +
+                     "\")");
+        socket.write(
+            'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\nTLS required (use wss://)');
         socket.destroy();
         return;
     }
