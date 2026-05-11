@@ -152,9 +152,10 @@ function getResourceUrl()
             //   1. TELEPORT_RESOURCE_PROTOCOL env-var override
             //   2. X-Forwarded-Proto header (set by reverse proxies)
             //   3. 'http' — the server itself never terminates TLS
-            const forwardedProto = signaling.getClientProtoHeader();
-            const protocol       = resourceProtocolOverride || forwardedProto || 'http';
-            const host           = stripDefaultPort(autoDetectedHost);
+            const forwardedProto =
+                signaling.getClientProtoHeader ? signaling.getClientProtoHeader() : '';
+            const protocol = resourceProtocolOverride || forwardedProto || 'http';
+            const host     = stripDefaultPort(autoDetectedHost);
             return `${protocol}://${host}`;
         }
     }
