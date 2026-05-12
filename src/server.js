@@ -164,47 +164,51 @@ function getResourceUrl()
     return `${protocol}://localhost:${signaling_port}`;
 }
 
-// Default STUN/TURN servers for the example. Mixes UDP, TCP and TLS transports
-// so ICE has multiple paths to try when UDP egress is blocked (e.g. Heroku).
-// Override at runtime by setting TELEPORT_ICE_SERVERS to a JSON array. The
-// metered.ca TURN credentials below are placeholders; replace them with your
-// own (or set TELEPORT_ICE_SERVERS) for any non-trivial deployment.
-let iceServers = [
-    {urls : "stun:stun.l.google.com:19302"}, {urls : "stun:stun.relay.metered.ca:80"}, {
-        urls : "turn:global.relay.metered.ca:80",
-        username : "83c1c2d5812f27ae1744dfcc",
-        credential : "5T/RNHuNmGmq1/pj"
-    },
-    {
-        urls : "turn:global.relay.metered.ca:80?transport=tcp",
-        username : "83c1c2d5812f27ae1744dfcc",
-        credential : "5T/RNHuNmGmq1/pj"
-    },
-    {
-        urls : "turn:global.relay.metered.ca:443",
-        username : "83c1c2d5812f27ae1744dfcc",
-        credential : "5T/RNHuNmGmq1/pj"
-    },
-    {
-        urls : "turns:global.relay.metered.ca:443?transport=tcp",
-        username : "83c1c2d5812f27ae1744dfcc",
-        credential : "5T/RNHuNmGmq1/pj"
-    }
-];
+// Default ICE configuration: STUN only. We deliberately do NOT ship shared TURN
+// credentials as a default any more — relying on a free-tier shared TURN means
+// every production deployment that forgets to configure ICE ends up routing all
+// media through the same relay (with the latency, quota and reliability that
+// implies; sessions tend to drop after ~50 s when the allocation is reclaimed).
+//
+// Operators that need TURN must set TELEPORT_ICE_SERVERS to a JSON array, e.g.
+//   TELEPORT_ICE_SERVERS='[
+//     {"urls":"stun:stun.l.google.com:19302"},
+//     {"urls":"turn:turn.example.com:3478","username":"u","credential":"p"}
+//   ]'
+let iceServers   = [ {urls : "stun:stun.l.google.com:19302"} ];
+let iceServersConfigured = false;
 if (process.env.TELEPORT_ICE_SERVERS)
 {
     try
     {
         const parsed = JSON.parse(process.env.TELEPORT_ICE_SERVERS);
         if (Array.isArray(parsed))
+        {
             iceServers = parsed;
+            iceServersConfigured = true;
+        }
         else
+        {
             console.error("TELEPORT_ICE_SERVERS must be a JSON array; ignoring.");
+        }
     }
     catch (e)
     {
         console.error("Failed to parse TELEPORT_ICE_SERVERS: " + e.toString() + "; ignoring.");
     }
+}
+const hasTurn = iceServers.some(s =>
+{
+    const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
+    return urls.some(u => u && (u.startsWith('turn:') || u.startsWith('turns:')));
+});
+if (!hasTurn)
+{
+    console.warn(
+        "ICE: no TURN server configured" +
+        (iceServersConfigured ? " in TELEPORT_ICE_SERVERS" : " (STUN-only default)") +
+        " — clients behind symmetric NAT or with UDP blocked will fail to connect. " +
+        "Set TELEPORT_ICE_SERVERS to a JSON array including a turn:/turns: entry to enable TURN.");
 }
 
 let iceTransportPolicy;
