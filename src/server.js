@@ -47,6 +47,10 @@ const custom_player   = require('./custom-player.js');
 
 const WebSocketServer = require("ws");
 
+// Log the version of teleportxr being used
+const teleportPackageJson = require('teleportxr/package.json');
+console.log(`[Startup] TeleportXR version: ${teleportPackageJson.version}`);
+
 // Create a scene, so we can fill it with stuff.
 var sc                = new scene.Scene();
 
