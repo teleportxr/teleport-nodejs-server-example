@@ -48,8 +48,16 @@ const custom_player   = require('./custom-player.js');
 const WebSocketServer = require("ws");
 
 // Log the version of teleportxr being used
-const teleportPackageJson = require('teleportxr/package.json');
-console.log(`[Startup] TeleportXR version: ${teleportPackageJson.version}`);
+const fs = require('fs');
+const path_module = require('path');
+try {
+	// Read package.json from node_modules directly to get the teleportxr version
+	const teleportPkgPath = path_module.join(__dirname, '../node_modules/teleportxr/package.json');
+	const teleportPkgJson = JSON.parse(fs.readFileSync(teleportPkgPath, 'utf8'));
+	console.log(`[Startup] TeleportXR version: ${teleportPkgJson.version}`);
+} catch (e) {
+	console.warn(`[Startup] Could not read TeleportXR version: ${e.message}`);
+}
 
 // Create a scene, so we can fill it with stuff.
 var sc                = new scene.Scene();
