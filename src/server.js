@@ -175,13 +175,44 @@ function getResourceUrl()
 //     {"urls":"stun:stun.l.google.com:19302"},
 //     {"urls":"turn:turn.example.com:3478","username":"u","credential":"p"}
 //   ]'
+// Strip whitespace (spaces, tabs, CR, LF) that sits OUTSIDE of JSON string
+// literals, so a value pasted into a config UI with pretty-printed indentation
+// and line breaks still parses. Whitespace inside "..." is preserved verbatim,
+// so URLs / usernames / credentials containing spaces are not corrupted.
+function stripJsonWhitespaceOutsideStrings(s)
+{
+    let out = '';
+    let inStr = false;
+    let escape = false;
+    for (let i = 0; i < s.length; i++)
+    {
+        const c = s[i];
+        if (inStr)
+        {
+            out += c;
+            if (escape)            escape = false;
+            else if (c === '\\')   escape = true;
+            else if (c === '"')    inStr = false;
+            continue;
+        }
+        if (c === '"') { inStr = true; out += c; continue; }
+        if (c === ' ' || c === '\t' || c === '\n' || c === '\r') continue;
+        out += c;
+    }
+    return out;
+}
+
 let iceServers   = [ {urls : "stun:stun.l.google.com:19302"} ];
 let iceServersConfigured = false;
 if (process.env.TELEPORT_ICE_SERVERS)
 {
+    // Strip a leading UTF-8 BOM if present, then collapse external whitespace.
+    let raw = process.env.TELEPORT_ICE_SERVERS;
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+    const normalised = stripJsonWhitespaceOutsideStrings(raw);
     try
     {
-        const parsed = JSON.parse(process.env.TELEPORT_ICE_SERVERS);
+        const parsed = JSON.parse(normalised);
         if (Array.isArray(parsed))
         {
             iceServers = parsed;
