@@ -289,6 +289,40 @@ express_app.use(function(req, res, next) {
 express_app.use(express.static('dashboard_public'));
 // Also serve any static 3D resources when requested. Use absolute path so it works
 // regardless of the directory node was started from.
+
+// Explicit conditional request handling for If-Modified-Since
+// This ensures 304 responses are sent when the client has a recent cached copy
+express_app.use((req, res, next) => {
+    const ifModifiedSince = req.headers['if-modified-since'];
+    if (ifModifiedSince && req.method === 'GET') {
+        const fs = require('fs');
+        const path_module = require('path');
+        const filePath = path_module.join(publicPath, req.path);
+
+        try {
+            const stats = fs.statSync(filePath);
+            const fileModTime = new Date(stats.mtime);
+            const clientModTime = new Date(ifModifiedSince);
+
+            // Log the comparison for debugging
+            if (req.path.includes('.ktx2') || req.path.includes('.glb') || req.path.includes('.png')) {
+                console.log(`  [CONDITIONAL] ${req.path}`);
+                console.log(`    Server mtime: ${fileModTime.toUTCString()}`);
+                console.log(`    Client mtime: ${clientModTime.toUTCString()}`);
+                console.log(`    File unmodified: ${fileModTime <= clientModTime}`);
+            }
+
+            // If server file is older than or equal to client's copy, return 304
+            if (fileModTime <= clientModTime) {
+                return res.status(304).end();
+            }
+        } catch (err) {
+            // File doesn't exist or can't stat it, let express.static handle it
+        }
+    }
+    next();
+});
+
 express_app.use(express.static(publicPath));
 // Don't pass express_app to createServer - that would cause it to initalize before websockets is
 // connected
