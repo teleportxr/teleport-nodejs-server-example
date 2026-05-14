@@ -276,8 +276,13 @@ const express_app = express();
 express_app.use(function(req, res, next) {
     const start = Date.now();
     res.on('finish', function() {
-        console.log(
-            `HTTP ${req.method} ${req.originalUrl} -> ${res.statusCode} (${Date.now() - start}ms)`);
+        const elapsed = Date.now() - start;
+        const ifModifiedSince = req.headers['if-modified-since'];
+        const logMsg = `HTTP ${req.method} ${req.originalUrl} -> ${res.statusCode} (${elapsed}ms)`;
+        if (ifModifiedSince) {
+            console.log(`  [IF-MODIFIED-SINCE] ${ifModifiedSince}`);
+        }
+        console.log(logMsg);
     });
     next();
 });
