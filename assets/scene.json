@@ -65,7 +65,7 @@
 	],
 	"canvases":{
 		"test_canvas":{
-			"font": "/venti.font_atlas2"
+			"font": "/venti.font_atlas"
 			,"lineHeight": 1.0
 			,"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
 		},
