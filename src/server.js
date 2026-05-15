@@ -48,23 +48,26 @@ const custom_player   = require('./custom-player.js');
 const WebSocketServer = require("ws");
 
 // Log the version of teleportxr being used
-const fs = require('fs');
-const path_module = require('path');
-try {
-	// Read package.json from node_modules directly to get the teleportxr version
-	const teleportPkgPath = path_module.join(__dirname, '../node_modules/teleportxr/package.json');
-	const teleportPkgJson = JSON.parse(fs.readFileSync(teleportPkgPath, 'utf8'));
-	console.log(`[Startup] TeleportXR version: ${teleportPkgJson.version}`);
-} catch (e) {
-	console.warn(`[Startup] Could not read TeleportXR version: ${e.message}`);
+const fs              = require('fs');
+const path_module     = require('path');
+try
+{
+    // Read package.json from node_modules directly to get the teleportxr version
+    const teleportPkgPath = path_module.join(__dirname, '../node_modules/teleportxr/package.json');
+    const teleportPkgJson = JSON.parse(fs.readFileSync(teleportPkgPath, 'utf8'));
+    console.log(`[Startup] TeleportXR version: ${teleportPkgJson.version}`);
+}
+catch (e)
+{
+    console.warn(`[Startup] Could not read TeleportXR version: ${e.message}`);
 }
 
 // Create a scene, so we can fill it with stuff.
-var sc                = new scene.Scene();
+var sc           = new scene.Scene();
 
 // Load our scene.json into the scene.
-const path            = require('path');
-const assetsPath      = path.join(__dirname, '../assets');
+const path       = require('path');
+const assetsPath = path.join(__dirname, '../assets');
 sc.SetAssetsPath(assetsPath);
 const publicPath = path.join(__dirname, '../http_resources');
 sc.SetPublicPath(publicPath);
@@ -193,8 +196,8 @@ function getResourceUrl()
 // so URLs / usernames / credentials containing spaces are not corrupted.
 function stripJsonWhitespaceOutsideStrings(s)
 {
-    let out = '';
-    let inStr = false;
+    let out    = '';
+    let inStr  = false;
     let escape = false;
     for (let i = 0; i < s.length; i++)
     {
@@ -202,32 +205,42 @@ function stripJsonWhitespaceOutsideStrings(s)
         if (inStr)
         {
             out += c;
-            if (escape)            escape = false;
-            else if (c === '\\')   escape = true;
-            else if (c === '"')    inStr = false;
+            if (escape)
+                escape = false;
+            else if (c === '\\')
+                escape = true;
+            else if (c === '"')
+                inStr = false;
             continue;
         }
-        if (c === '"') { inStr = true; out += c; continue; }
-        if (c === ' ' || c === '\t' || c === '\n' || c === '\r') continue;
+        if (c === '"')
+        {
+            inStr = true;
+            out += c;
+            continue;
+        }
+        if (c === ' ' || c === '\t' || c === '\n' || c === '\r')
+            continue;
         out += c;
     }
     return out;
 }
 
-let iceServers   = [ {urls : "stun:stun.l.google.com:19302"} ];
+let iceServers           = [ {urls : "stun:stun.l.google.com:19302"} ];
 let iceServersConfigured = false;
 if (process.env.TELEPORT_ICE_SERVERS)
 {
     // Strip a leading UTF-8 BOM if present, then collapse external whitespace.
     let raw = process.env.TELEPORT_ICE_SERVERS;
-    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+    if (raw.charCodeAt(0) === 0xFEFF)
+        raw = raw.slice(1);
     const normalised = stripJsonWhitespaceOutsideStrings(raw);
     try
     {
         const parsed = JSON.parse(normalised);
         if (Array.isArray(parsed))
         {
-            iceServers = parsed;
+            iceServers           = parsed;
             iceServersConfigured = true;
         }
         else
@@ -240,9 +253,8 @@ if (process.env.TELEPORT_ICE_SERVERS)
         console.error("Failed to parse TELEPORT_ICE_SERVERS: " + e.toString() + "; ignoring.");
     }
 }
-const hasTurn = iceServers.some(s =>
-{
-    const urls = Array.isArray(s.urls) ? s.urls : [s.urls];
+const hasTurn = iceServers.some(s => {
+    const urls = Array.isArray(s.urls) ? s.urls : [ s.urls ];
     return urls.some(u => u && (u.startsWith('turn:') || u.startsWith('turns:')));
 });
 if (!hasTurn)
@@ -276,10 +288,16 @@ const express_app = express();
 express_app.use(function(req, res, next) {
     const start = Date.now();
     res.on('finish', function() {
-        const elapsed = Date.now() - start;
+        const elapsed         = Date.now() - start;
+        const ifNoneMatch     = req.headers['if-none-match'];
         const ifModifiedSince = req.headers['if-modified-since'];
         const logMsg = `HTTP ${req.method} ${req.originalUrl} -> ${res.statusCode} (${elapsed}ms)`;
-        if (ifModifiedSince) {
+        if (ifNoneMatch)
+        {
+            console.log(`  [IF-NONE-MATCH] ${ifNoneMatch}`);
+        }
+        if (ifModifiedSince)
+        {
             console.log(`  [IF-MODIFIED-SINCE] ${ifModifiedSince}`);
         }
         console.log(logMsg);
@@ -290,40 +308,79 @@ express_app.use(express.static('dashboard_public'));
 // Also serve any static 3D resources when requested. Use absolute path so it works
 // regardless of the directory node was started from.
 
-// Explicit conditional request handling for If-Modified-Since
-// This ensures 304 responses are sent when the client has a recent cached copy
-express_app.use((req, res, next) => {
-    const ifModifiedSince = req.headers['if-modified-since'];
-    if (ifModifiedSince && req.method === 'GET') {
-        const fs = require('fs');
-        const path_module = require('path');
-        const filePath = path_module.join(publicPath, req.path);
+// Conditional-request validator for the public resources directory.
+// TELEPORT_HTTP_CACHE_VALIDATOR selects the strategy:
+//   "etag"  (default) — strong ETag from SHA-256 of file content. Survives
+//                       Heroku redeploys (which rewrite file mtimes) so the
+//                       client's cached copies stay valid when content is
+//                       unchanged. Costs one hash per file (cached in memory).
+//   "mtime"            — Last-Modified / If-Modified-Since based on file mtime.
+//                       Cheaper but invalidates on every redeploy.
+const cacheValidator = (process.env.TELEPORT_HTTP_CACHE_VALIDATOR || 'etag').toLowerCase();
+if (cacheValidator !== 'etag' && cacheValidator !== 'mtime')
+{
+    console.error(`TELEPORT_HTTP_CACHE_VALIDATOR must be 'etag' or 'mtime'; got '${
+        cacheValidator}', defaulting to 'etag'.`);
+}
+const useEtag = cacheValidator !== 'mtime';
+console.log(`HTTP cache validator: ${useEtag ? 'etag (content hash)' : 'mtime (Last-Modified)'}`);
 
-        try {
-            const stats = fs.statSync(filePath);
-            const fileModTime = new Date(stats.mtime);
-            const clientModTime = new Date(ifModifiedSince);
+if (useEtag)
+{
+    const    crypto    = require('crypto');
+    const    etagCache = new Map(); // absolute path -> { mtimeMs, size, etag }
 
-            // Log the comparison for debugging
-            if (req.path.includes('.ktx2') || req.path.includes('.glb') || req.path.includes('.png')) {
-                console.log(`  [CONDITIONAL] ${req.path}`);
-                console.log(`    Server mtime: ${fileModTime.toUTCString()}`);
-                console.log(`    Client mtime: ${clientModTime.toUTCString()}`);
-                console.log(`    File unmodified: ${fileModTime <= clientModTime}`);
-            }
-
-            // If server file is older than or equal to client's copy, return 304
-            if (fileModTime <= clientModTime) {
-                return res.status(304).end();
-            }
-        } catch (err) {
-            // File doesn't exist or can't stat it, let express.static handle it
+    function computeETag(filePath, stats)
+    {
+        const cached = etagCache.get(filePath);
+        if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size)
+        {
+            return cached.etag;
         }
+        const hash = crypto.createHash('sha256');
+        hash.update(fs.readFileSync(filePath));
+        const etag = '"' + hash.digest('hex') + '"';
+        etagCache.set(filePath, {mtimeMs : stats.mtimeMs, size : stats.size, etag});
+        return etag;
     }
-    next();
-});
 
-express_app.use(express.static(publicPath));
+    express_app.use((req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD')
+        {
+            return next();
+        }
+        const filePath = path_module.join(publicPath, req.path);
+        let   stats;
+        try
+        {
+            stats = fs.statSync(filePath);
+            if (!stats.isFile())
+                return next();
+        }
+        catch (err)
+        {
+            return next();
+        }
+        const etag = computeETag(filePath, stats);
+        res.setHeader('ETag', etag);
+        const ifNoneMatch = req.headers['if-none-match'];
+        if (ifNoneMatch && ifNoneMatch === etag)
+        {
+            return res.status(304).end();
+        }
+        next();
+    });
+
+    // Disable express.static's default (mtime-based) ETag and Last-Modified so
+    // only the content-hash ETag set above is used for conditional requests.
+    express_app.use(express.static(publicPath, {etag : false, lastModified : false}));
+}
+else
+{
+    // express.static handles If-Modified-Since natively when lastModified is on.
+    // Disable its weak ETag so only Last-Modified drives conditional responses.
+    express_app.use(express.static(publicPath, {etag : false, lastModified : true}));
+}
 // Don't pass express_app to createServer - that would cause it to initalize before websockets is
 // connected
 const http_server = express_app.listen(signaling_port);
