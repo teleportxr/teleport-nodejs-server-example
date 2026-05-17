@@ -304,6 +304,25 @@ express_app.use(function(req, res, next) {
     });
     next();
 });
+// CORS: every static asset is referenced by uid from a TexturePointer /
+// MeshPointer chunk and fetched by the browser-based client from a different
+// origin (the page is hosted on the consumer's site, not on this server).
+// Without an explicit Access-Control-Allow-Origin the browser blocks the
+// response. The protocol's HTTP service is intended to be cross-origin
+// readable; allow it from anywhere. No credentials are involved so the
+// wildcard is safe.
+express_app.use(function(req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, If-None-Match, If-Modified-Since');
+    res.setHeader('Access-Control-Expose-Headers', 'ETag, Last-Modified, Content-Length');
+    if (req.method === 'OPTIONS')
+    {
+        res.status(204).end();
+        return;
+    }
+    next();
+});
 express_app.use(express.static('dashboard_public'));
 // Also serve any static 3D resources when requested. Use absolute path so it works
 // regardless of the directory node was started from.

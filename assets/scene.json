@@ -11,7 +11,7 @@
 			},
 			"components":[
 				{"type":"mesh"
-				,"url":"https://github.com/KhronosGroup/glTF-Sample-Models/raw/refs/heads/main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
+				,"url":"https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
 		},
 		"sphere":{
 			"pose":{
