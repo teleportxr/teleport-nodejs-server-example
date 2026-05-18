@@ -31,7 +31,10 @@
 			},
 			"components":[
 				{"type":"mesh"
-				,"url":"/test_preview_sphere.glb"}]
+					,"url":"/test_preview_sphere.glb"}
+				,{"type":"sound"
+					,"url":"/test_loop.wav"}
+			]
 		},
 		"sign":{
 			"pose":{
