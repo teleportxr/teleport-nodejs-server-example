@@ -68,14 +68,14 @@
 	],
 	"canvases":{
 		"test_canvas":{
-			"font": "/venti.font_atlas"
+			"font": "/DejaVuSerif.ttf"
 			,"lineHeight": 1.0
 			,"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
 		},
 		"test_canvas2":{
 			"font": "/DejaVuSerif.ttf"
-			,"lineHeight": 1.0
-			,"content": ["A different test for the text canvas",
+			,"lineHeight": 2.0
+			,"content": ["This is a text canvas",
 						"Can we newline this way?",
 						"Yes, just put an array of strings instead",
 						"of a single string!"]
