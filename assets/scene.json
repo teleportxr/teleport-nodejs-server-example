@@ -3,6 +3,16 @@
 				"diffuse_cubemap":"/diffuseCloudyCubemap.ktx2",
 				"specular_cubemap":"/specularCloudyCubemap.ktx2"},
 	"nodes":{
+		"tree1":{
+			"pose":{
+				"position":[0,8,0]
+				,"orientation":[0,0,0,1]
+				,"scale":[1.0,1.0,1.0]
+			},
+			"components":[
+				{"type":"mesh"
+				,"url":"/tree.glb"}]
+		},
 		"buggy":{
 			"pose":{
 				"position":[0,0,0]
@@ -32,8 +42,6 @@
 			"components":[
 				{"type":"mesh"
 					,"url":"/test_preview_sphere.glb"}
-				,{"type":"sound"
-					,"url":"/test_loop.wav"}
 			]
 		},
 		"sign":{
