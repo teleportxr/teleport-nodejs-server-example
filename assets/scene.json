@@ -5,13 +5,13 @@
 	"nodes":{
 		"tree1":{
 			"pose":{
-				"position":[0,8,0]
+				"position":[-3,8,0]
 				,"orientation":[0,0,0,1]
 				,"scale":[1.0,1.0,1.0]
 			},
 			"components":[
 				{"type":"mesh"
-				,"url":"/tree.glb"}]
+				,"url":"/Tree.glb"}]
 		},
 		"buggy":{
 			"pose":{
