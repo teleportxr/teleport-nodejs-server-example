@@ -59,3 +59,8 @@ The server example also inherits any environment variables read by the
 `teleportxr` library itself; see the
 [teleport-nodejs README](https://github.com/teleportxr/teleport-nodejs#environment-variables)
 for the current list (currently `WEBRTC_CONNECT_TIMEOUT_MS`).
+
+
+### Dependencies
+
+ktx

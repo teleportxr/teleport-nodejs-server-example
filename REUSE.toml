@@ -32,11 +32,25 @@ path = [
   "http_resources/specularCloudyCubemap.ktx2",
   "http_resources/specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2",
   "http_resources/test_preview_sphere.glb",
+  "http_resources/test_loop.mp3",
+  "http_resources/test_loop.wav",
   "http_resources/venti.ktx2",
   "assets/venti.font_atlas",
 ]
 SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "MIT"
+
+# Third-party 3-D asset
+[[annotations]]
+path = "http_resources/Tree.glb"
+SPDX-FileCopyrightText = "2026 Teleport XR Ltd"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Third-party HDRI environment map (Polyhaven)
+[[annotations]]
+path = "http_resources/envCloudyCubemap_eng.ktx2"
+SPDX-FileCopyrightText = "Polyhaven contributors (https://polyhaven.com)"
+SPDX-License-Identifier = "CC-BY-4.0"
 
 # Artifacts generated from DejaVuSerif (Bitstream Vera / DejaVu lineage)
 [[annotations]]

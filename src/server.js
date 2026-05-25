@@ -40,10 +40,12 @@ const client          = require('teleportxr/client/client');
 const scene           = require("teleportxr/scene/scene");
 const resources       = require("teleportxr/scene/resources");
 const signaling       = require("teleportxr/signaling");
+const avatars_proto   = require("teleportxr/protocol/avatars");
 const express         = require('express');
 const http            = require('http');
 const socketIo        = require('socket.io');
 const custom_player   = require('./custom-player.js');
+const config          = require('./config.js');
 
 const WebSocketServer = require("ws");
 
@@ -93,6 +95,26 @@ function createNewClientNode(clientID)
 }
 cm.SetNewClientNodeCallback(createNewClientNode);
 
+// Monotonic per-process policy id used to tag every avatar-policy issued.
+// BigInt because the wire field is uint64; starts at 1 so 0 always means
+// "no policy in flight" on both ends.
+var nextAvatarPolicyId = 1n;
+
+// Build an AvatarPolicy from the static example-server config block.
+// Pulled out of onClientPostCreate so it's trivial to unit-test in
+// isolation if/when we add tests for the example server.
+function buildAvatarPolicyForClient(clientID)
+{
+    const a = config.avatars;
+    return new avatars_proto.AvatarPolicy({
+        policy_id : nextAvatarPolicyId++,
+        requirement : a.requirement,
+        default_available : a.default_available,
+        requirements : a.requirements,
+        proof : a.proof,
+    });
+}
+
 // This will be called AFTER a client has been created, so we can access it from the clientManager.
 function onClientPostCreate(clientID)
 {
@@ -103,6 +125,18 @@ function onClientPostCreate(clientID)
     var client = cm.GetClient(clientID);
     client.SetScene(sc);
     client.PostSceneInit();
+    // Issue an avatar policy if the operator has opted in via config /
+    // TELEPORT_AVATARS_ENABLED. Phase 2 of the avatar rollout: the
+    // AvatarService rounds the offer back as `using_default` regardless
+    // of what the client supplies (see plans/avatars_implementation.md §3).
+    if (config.avatars.enabled && client.avatarService)
+    {
+        const policy = buildAvatarPolicyForClient(clientID);
+        console.log("Issuing avatar policy " + policy.policy_id + " to client " + clientID +
+                    " (requirement=" + policy.requirement +
+                    ", default_available=" + policy.default_available + ")");
+        client.avatarService.sendPolicy(policy);
+    }
 }
 cm.SetClientPostCreationCallback(onClientPostCreate);
 
@@ -481,5 +515,16 @@ express_io.on('connection', (socket) => {
       socket.emit('client_manager', cm.writeState());
     }, 1000);
 });*/
+
+if (config.avatars.enabled)
+{
+    console.log("Avatars: enabled (requirement=" + config.avatars.requirement +
+                ", default_available=" + config.avatars.default_available +
+                ", formats=" + JSON.stringify(config.avatars.requirements.formats) + ")");
+}
+else
+{
+    console.log("Avatars: disabled (set TELEPORT_AVATARS_ENABLED=1 to opt in)");
+}
 
 console.log(`Dashboard: http://localhost:${signaling_port}`);
