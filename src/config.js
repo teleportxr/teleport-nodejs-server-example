@@ -70,6 +70,14 @@ const config = {
             required : envBool('TELEPORT_AVATARS_PROOF_REQUIRED', false),
             accepted_schemes : envList('TELEPORT_AVATARS_PROOF_SCHEMES', []),
         },
+        // Phase 3: when true, install a DefaultAvatarValidator on each
+        // client so offered URLs are actually fetched, hashed and
+        // measured. When false (the default) the AvatarService keeps its
+        // Phase-2 behaviour and always replies using_default.
+        validate : envBool('TELEPORT_AVATARS_VALIDATE', false),
+        // Hard wall-clock budget on the entire fetch+hash step. Mirrors
+        // the policy.fetch_timeout_ms field on the wire.
+        fetch_timeout_ms : envInt('TELEPORT_AVATARS_FETCH_TIMEOUT_MS', 15000),
     },
 };
 

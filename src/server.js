@@ -34,24 +34,25 @@
 // resources (meshes, textures, etc.) from the Express HTTP server.
 // ============================================================================
 
-const teleport_server = require('teleportxr')
-const client_manager  = require('teleportxr/client/client_manager');
-const client          = require('teleportxr/client/client');
-const scene           = require("teleportxr/scene/scene");
-const resources       = require("teleportxr/scene/resources");
-const signaling       = require("teleportxr/signaling");
-const avatars_proto   = require("teleportxr/protocol/avatars");
-const express         = require('express');
-const http            = require('http');
-const socketIo        = require('socket.io');
-const custom_player   = require('./custom-player.js');
-const config          = require('./config.js');
+const teleport_server  = require('teleportxr')
+const client_manager   = require('teleportxr/client/client_manager');
+const client           = require('teleportxr/client/client');
+const scene            = require("teleportxr/scene/scene");
+const resources        = require("teleportxr/scene/resources");
+const signaling        = require("teleportxr/signaling");
+const avatars_proto    = require("teleportxr/protocol/avatars");
+const avatar_validator = require("teleportxr/client/avatar_validator");
+const express          = require('express');
+const http             = require('http');
+const socketIo         = require('socket.io');
+const custom_player    = require('./custom-player.js');
+const config           = require('./config.js');
 
-const WebSocketServer = require("ws");
+const WebSocketServer  = require("ws");
 
 // Log the version of teleportxr being used
-const fs              = require('fs');
-const path_module     = require('path');
+const fs               = require('fs');
+const path_module      = require('path');
 try
 {
     // Read package.json from node_modules directly to get the teleportxr version
@@ -100,6 +101,17 @@ cm.SetNewClientNodeCallback(createNewClientNode);
 // "no policy in flight" on both ends.
 var nextAvatarPolicyId = 1n;
 
+// Phase 3: shared validator instance reused across clients so its LRU
+// cache benefits every session. Created lazily so deployments that never
+// flip TELEPORT_AVATARS_VALIDATE pay nothing.
+const sharedAvatarValidator =
+    config.avatars.enabled && config.avatars.validate
+        ? new avatar_validator.DefaultAvatarValidator({
+              defaultMaxBytes : config.avatars.requirements.max_file_bytes,
+              defaultTimeoutMs : config.avatars.fetch_timeout_ms,
+          })
+        : null;
+
 // Build an AvatarPolicy from the static example-server config block.
 // Pulled out of onClientPostCreate so it's trivial to unit-test in
 // isolation if/when we add tests for the example server.
@@ -131,10 +143,13 @@ function onClientPostCreate(clientID)
     // of what the client supplies (see plans/avatars_implementation.md §3).
     if (config.avatars.enabled && client.avatarService)
     {
+        if (sharedAvatarValidator)
+            client.avatarService.validator = sharedAvatarValidator;
         const policy = buildAvatarPolicyForClient(clientID);
         console.log("Issuing avatar policy " + policy.policy_id + " to client " + clientID +
                     " (requirement=" + policy.requirement +
-                    ", default_available=" + policy.default_available + ")");
+                    ", default_available=" + policy.default_available +
+                    ", validate=" + (sharedAvatarValidator ? "on" : "off") + ")");
         client.avatarService.sendPolicy(policy);
     }
 }
@@ -520,7 +535,8 @@ if (config.avatars.enabled)
 {
     console.log("Avatars: enabled (requirement=" + config.avatars.requirement +
                 ", default_available=" + config.avatars.default_available +
-                ", formats=" + JSON.stringify(config.avatars.requirements.formats) + ")");
+                ", formats=" + JSON.stringify(config.avatars.requirements.formats) +
+                ", validate=" + (sharedAvatarValidator ? "on" : "off") + ")");
 }
 else
 {
