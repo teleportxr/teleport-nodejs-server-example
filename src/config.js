@@ -62,7 +62,7 @@ const config = {
         // Snake_case to match the protocol doc (signaling.rst §Avatar
         // negotiation) so values round-trip without renaming.
         requirements : {
-            formats : envList('TELEPORT_AVATARS_FORMATS', [ 'glb' ]),
+            formats : envList('TELEPORT_AVATARS_FORMATS', [ 'glb', 'vrm' ]),
             max_file_bytes : envInt('TELEPORT_AVATARS_MAX_FILE_BYTES', 8_000_000),
         },
         // Proof block — phase 2 never demands a proof.
