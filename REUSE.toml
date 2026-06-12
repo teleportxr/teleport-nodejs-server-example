@@ -48,7 +48,7 @@ SPDX-License-Identifier = "CC-BY-4.0"
 
 # Third-party HDRI environment map (Polyhaven)
 [[annotations]]
-path = "http_resources/envCloudyCubemap_eng.ktx2"
+path = ["http_resources/envCloudyCubemap_eng.ktx2", "http_resources/envCloudyCubemap_ogl.ktx2"]
 SPDX-FileCopyrightText = "Polyhaven contributors (https://polyhaven.com)"
 SPDX-License-Identifier = "CC-BY-4.0"
 
