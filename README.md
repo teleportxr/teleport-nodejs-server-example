@@ -9,6 +9,17 @@ npm install
 node src/server.js
 ```
 
+## Microphone forwarding (SFU)
+
+The server forwards each connected client's microphone audio to every other
+client, demonstrating the SFU topology in `docs/protocol/audio.rst`. This is
+handled by a small [`MicRouter`](src/mic-router.js) wired up in `src/server.js`:
+it subscribes to the `micFrame` event of every live `WebRtcConnection` and pushes
+each frame to the other connections' outbound audio sources, with loopback
+suppression so a client never hears itself. The default policy forwards to all
+peers; replace `MicRouter` (or its `_forward` method) to implement a custom
+selection policy. Run `npm test` to exercise the router against stub connections.
+
 ## Environment variables
 
 All variables are optional. Boolean-like values accept `1`, `true`, or `yes`
