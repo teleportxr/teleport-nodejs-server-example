@@ -138,6 +138,9 @@ function onClientPostCreate(clientID)
     updateResourceUrlIfNeeded();
     var client = cm.GetClient(clientID);
     client.SetScene(sc);
+    // Enable the client's microphone track so the SFU can forward its voice.
+    // Set before the client builds its SetupCommand (in Start()).
+    client.acceptMicrophone = (config.audio.acceptMicrophone !== false);
     client.PostSceneInit();
     // Issue an avatar policy if the operator has opted in via config /
     // TELEPORT_AVATARS_ENABLED. Phase 2 of the avatar rollout: the
@@ -331,11 +334,15 @@ const wss       = teleport_server.initServer(undefined, {iceServers, iceTranspor
 
 // SFU: forward each connected client's microphone audio to every other client.
 // The router shares the library's WebRtcConnectionManager singleton, so it sees
-// the same connections the clients create. Default policy: forward to all peers
-// with loopback suppression. See src/mic-router.js.
-const micRouter = new MicRouter(webrtc_conn_mgr.getInstance());
+// the same connections the clients create; the client manager resolves each
+// participant's origin node uid, used as the mid of that participant's voice
+// track. Default policy: forward to all peers with loopback suppression, each on
+// its own node-bound track. See src/mic-router.js.
+const micRouter = new MicRouter(webrtc_conn_mgr.getInstance(), cm, config.audio);
 micRouter.start();
-console.log("MicRouter: forwarding client microphone audio between connected clients.");
+console.log("MicRouter: forwarding client microphone audio between connected clients" +
+            " (policy=" + config.audio.selectionPolicy +
+            ", maxInboundStreams=" + config.audio.maxInboundStreams + ").");
 
 // Create a simple http server for scene management and display.
 // This will be accessible at localhost:9000 via a browser.
