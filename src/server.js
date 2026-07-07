@@ -36,6 +36,8 @@
 
 const teleport_server  = require('teleportxr')
 const client_manager   = require('teleportxr/client/client_manager');
+const webrtc_conn_mgr  = require('teleportxr/connections/webrtcconnectionmanager');
+const MicRouter        = require('./mic-router.js');
 const client           = require('teleportxr/client/client');
 const scene            = require("teleportxr/scene/scene");
 const resources        = require("teleportxr/scene/resources");
@@ -136,6 +138,9 @@ function onClientPostCreate(clientID)
     updateResourceUrlIfNeeded();
     var client = cm.GetClient(clientID);
     client.SetScene(sc);
+    // Enable the client's microphone track so the SFU can forward its voice.
+    // Set before the client builds its SetupCommand (in Start()).
+    client.acceptMicrophone = (config.audio.acceptMicrophone !== false);
     client.PostSceneInit();
     // Issue an avatar policy if the operator has opted in via config /
     // TELEPORT_AVATARS_ENABLED. Phase 2 of the avatar rollout: the
@@ -325,7 +330,19 @@ if (process.env.TELEPORT_ICE_TRANSPORT_POLICY)
         console.error("TELEPORT_ICE_TRANSPORT_POLICY must be 'all' or 'relay'; ignoring.");
 }
 
-const wss         = teleport_server.initServer(undefined, {iceServers, iceTransportPolicy});
+const wss       = teleport_server.initServer(undefined, {iceServers, iceTransportPolicy});
+
+// SFU: forward each connected client's microphone audio to every other client.
+// The router shares the library's WebRtcConnectionManager singleton, so it sees
+// the same connections the clients create; the client manager resolves each
+// participant's origin node uid, used as the mid of that participant's voice
+// track. Default policy: forward to all peers with loopback suppression, each on
+// its own node-bound track. See src/mic-router.js.
+const micRouter = new MicRouter(webrtc_conn_mgr.getInstance(), cm, config.audio);
+micRouter.start();
+console.log("MicRouter: forwarding client microphone audio between connected clients" +
+            " (policy=" + config.audio.selectionPolicy +
+            ", maxInboundStreams=" + config.audio.maxInboundStreams + ").");
 
 // Create a simple http server for scene management and display.
 // This will be accessible at localhost:9000 via a browser.

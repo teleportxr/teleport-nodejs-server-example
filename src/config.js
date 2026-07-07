@@ -40,6 +40,15 @@ function envList(name, fallback)
     return String(v).split(',').map(s => s.trim()).filter(s => s.length > 0);
 }
 
+function envFloat(name, fallback)
+{
+    const v = process.env[name];
+    if (v == null || v === '')
+        return fallback;
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : fallback;
+}
+
 // Public config object. Anything that controls protocol-level behaviour
 // belongs in here; per-deployment knobs (resource URL, ICE servers, TLS
 // enforcement, etc.) remain inline in server.js until they too need
@@ -78,6 +87,24 @@ const config = {
         // Hard wall-clock budget on the entire fetch+hash step. Mirrors
         // the policy.fetch_timeout_ms field on the wire.
         fetch_timeout_ms : envInt('TELEPORT_AVATARS_FETCH_TIMEOUT_MS', 15000),
+    },
+    // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
+    // forwards each participant's microphone to the others on per-source tracks
+    // bound to the emitting node (mid = node uid; see docs/protocol/audio.rst).
+    audio : {
+        // Tell each client to send its microphone track (required for the SFU to
+        // receive and forward that client's voice). Default on.
+        acceptMicrophone : envBool('TELEPORT_AUDIO_ACCEPT_MIC', true),
+        // 'All'       — forward every other participant (default).
+        // 'Proximity' — forward the nearest maxInboundStreams within the radius.
+        selectionPolicy : process.env.TELEPORT_AUDIO_POLICY || 'All',
+        // Per-listener cap on concurrent forwarded voices. 0 = no cap.
+        maxInboundStreams : envInt('TELEPORT_AUDIO_MAX_STREAMS', 0),
+        // Proximity radius in metres. 0 = no radius limit. Used only by 'Proximity'.
+        proximityRadiusMetres : envFloat('TELEPORT_AUDIO_PROXIMITY_RADIUS', 0),
+        // Hysteresis (ms) before dropping a source that fell out of the selected
+        // set, to avoid churn at the boundary. 0 = evict immediately.
+        evictionGraceMs : envInt('TELEPORT_AUDIO_EVICTION_GRACE_MS', 0),
     },
 };
 
