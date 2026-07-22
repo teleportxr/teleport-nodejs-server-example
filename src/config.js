@@ -99,7 +99,7 @@ const config = {
         // 'Proximity' — forward the nearest maxInboundStreams within the radius.
         selectionPolicy : process.env.TELEPORT_AUDIO_POLICY || 'All',
         // Per-listener cap on concurrent forwarded voices. 0 = no cap.
-        maxInboundStreams : envInt('TELEPORT_AUDIO_MAX_STREAMS', 0),
+        maxInboundStreams : envInt('TELEPORT_AUDIO_MAX_STREAMS', 12),
         // Proximity radius in metres. 0 = no radius limit. Used only by 'Proximity'.
         proximityRadiusMetres : envFloat('TELEPORT_AUDIO_PROXIMITY_RADIUS', 0),
         // Hysteresis (ms) before dropping a source that fell out of the selected
