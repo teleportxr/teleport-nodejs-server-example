@@ -38,6 +38,7 @@ const teleport_server  = require('teleportxr')
 const client_manager   = require('teleportxr/client/client_manager');
 const webrtc_conn_mgr  = require('teleportxr/connections/webrtcconnectionmanager');
 const MicRouter        = require('./mic-router.js');
+const avatar_nodes     = require('./avatar-nodes.js');
 const client           = require('teleportxr/client/client');
 const scene            = require("teleportxr/scene/scene");
 const resources        = require("teleportxr/scene/resources");
@@ -98,6 +99,13 @@ function createNewClientNode(clientID)
 }
 cm.SetNewClientNodeCallback(createNewClientNode);
 
+// Server-provided avatar nodes: one VRM subscene node per client, lifetime
+// scoped to the client's session. See src/avatar-nodes.js.
+const avatarNodeManager = new avatar_nodes.AvatarNodeManager(sc, cm, config.avatars.subscene);
+cm.SetClientDisconnectionCallback(function(clientID) {
+    avatarNodeManager.destroyForClient(clientID);
+});
+
 // Monotonic per-process policy id used to tag every avatar-policy issued.
 // BigInt because the wire field is uint64; starts at 1 so 0 always means
 // "no policy in flight" on both ends.
@@ -138,6 +146,9 @@ function onClientPostCreate(clientID)
     updateResourceUrlIfNeeded();
     var client = cm.GetClient(clientID);
     client.SetScene(sc);
+    // Spawn this client's server-provided avatar node (VRM as subscene).
+    if (config.avatars.subscene.enabled)
+        avatarNodeManager.createForClient(clientID, client);
     // Enable the client's microphone track so the SFU can forward its voice.
     // Set before the client builds its SetupCommand (in Start()).
     client.acceptMicrophone = (config.audio.acceptMicrophone !== false);
@@ -558,6 +569,17 @@ if (config.avatars.enabled)
 else
 {
     console.log("Avatars: disabled (set TELEPORT_AVATARS_ENABLED=1 to opt in)");
+}
+
+if (config.avatars.subscene.enabled)
+{
+    console.log("Avatar subscene nodes: enabled (url=" + config.avatars.subscene.url +
+                ", position=" + JSON.stringify(config.avatars.subscene.position) + ")");
+}
+else
+{
+    console.log(
+        "Avatar subscene nodes: disabled (set TELEPORT_AVATAR_SUBSCENE_ENABLED=1 to opt in)");
 }
 
 console.log(`Dashboard: http://localhost:${signaling_port}`);

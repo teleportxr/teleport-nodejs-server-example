@@ -49,6 +49,16 @@ function envFloat(name, fallback)
     return Number.isFinite(n) ? n : fallback;
 }
 
+// Comma-separated floats, e.g. TELEPORT_AVATAR_SUBSCENE_POSITION="1.5,0,-2".
+function envFloatList(name, fallback)
+{
+    const v = process.env[name];
+    if (v == null || v === '')
+        return fallback;
+    const parts = String(v).split(',').map(s => parseFloat(s.trim()));
+    return parts.every(Number.isFinite) ? parts : fallback;
+}
+
 // Public config object. Anything that controls protocol-level behaviour
 // belongs in here; per-deployment knobs (resource URL, ICE servers, TLS
 // enforcement, etc.) remain inline in server.js until they too need
@@ -87,6 +97,17 @@ const config = {
         // Hard wall-clock budget on the entire fetch+hash step. Mirrors
         // the policy.fetch_timeout_ms field on the wire.
         fetch_timeout_ms : envInt('TELEPORT_AVATARS_FETCH_TIMEOUT_MS', 15000),
+        // Server-provided avatar: spawn one node per connected client with a
+        // MeshComponent whose URL resolves to a VRM under http_resources.
+        // The client fetches the VRM and instantiates it as a subscene of the
+        // node. Static for now (movement TBD); the node's lifetime is the
+        // client's session — it is destroyed, and a RemoveNodes payload sent
+        // to remaining clients, when the owning client disconnects.
+        subscene : {
+            enabled : envBool('TELEPORT_AVATAR_SUBSCENE_ENABLED', true),
+            url : process.env.TELEPORT_AVATAR_SUBSCENE_URL || '/generic_avatar.vrm',
+            position : envFloatList('TELEPORT_AVATAR_SUBSCENE_POSITION', [ 0, 0, 0 ]),
+        },
     },
     // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
     // forwards each participant's microphone to the others on per-source tracks

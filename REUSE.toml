@@ -17,7 +17,7 @@ path = [
   ".vscode/launch.json",
   ".vscode/settings.json",
 ]
-SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
+SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "MIT"
 
 # Project-created 3-D assets and environment maps
@@ -37,13 +37,19 @@ path = [
   "http_resources/venti.ktx2",
   "assets/venti.font_atlas",
 ]
-SPDX-FileCopyrightText = "2025 Teleport XR Ltd <contact@teleportxr.io>"
+SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "MIT"
 
 # Third-party 3-D asset
 [[annotations]]
 path = "http_resources/Tree.glb"
-SPDX-FileCopyrightText = "2026 Teleport XR Ltd"
+SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# VRM avatar and VRMA animation assets
+[[annotations]]
+path = ["http_resources/generic_avatar.vrm", "http_resources/*.vrma"]
+SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 # Third-party HDRI environment map (Polyhaven)
