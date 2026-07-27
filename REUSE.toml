@@ -35,6 +35,17 @@ path = [
   "http_resources/test_loop.mp3",
   "http_resources/test_loop.wav",
   "http_resources/venti.ktx2",
+  "http_resources/avatar_anim/Idle.vrma",
+  "http_resources/avatar_anim/Rumba_Dancing.vrma",
+  "http_resources/avatar_anim/Running.vrma",
+  "http_resources/avatar_anim/SittingDown.vrma",
+  "http_resources/avatar_anim/StandingUp.vrma",
+  "http_resources/avatar_anim/StandToSit.vrma",
+  "http_resources/avatar_anim/T-Pose.vrma",
+  "http_resources/avatar_anim/Unrotated.vrma",
+  "http_resources/avatar_anim/Walking2.vrma",
+  "http_resources/avatar_anim/Walking.vrma",
+  "http_resources/avatar_anim/Waving.vrma",
   "assets/venti.font_atlas",
 ]
 SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd <contact@teleportxr.io>"
