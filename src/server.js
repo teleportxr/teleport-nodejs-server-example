@@ -45,6 +45,8 @@ const resources        = require("teleportxr/scene/resources");
 const signaling        = require("teleportxr/signaling");
 const avatars_proto    = require("teleportxr/protocol/avatars");
 const avatar_validator = require("teleportxr/client/avatar_validator");
+const avatar_importer  = require("teleportxr/client/avatar_importer");
+const avatar_publisher = require('./avatar-publisher.js');
 const express          = require('express');
 const http             = require('http');
 const socketIo         = require('socket.io');
@@ -100,10 +102,29 @@ function createNewClientNode(clientID)
 cm.SetNewClientNodeCallback(createNewClientNode);
 
 // Server-provided avatar nodes: one VRM subscene node per client, lifetime
-// scoped to the client's session. See src/avatar-nodes.js.
-const avatarNodeManager = new avatar_nodes.AvatarNodeManager(sc, cm, config.avatars.subscene);
+// scoped to the client's session. See src/avatar-nodes.js. Superseded by
+// the negotiated-avatar flow below when config.avatars.enabled is true.
+const avatarNodeManager    = new avatar_nodes.AvatarNodeManager(sc, cm, config.avatars.subscene);
+
+// Phase 4: accepted avatars are re-hosted by this server so peers fetch
+// the validated bytes from us, never from the client's original URL
+// (plans/avatars_plan.md §8). See src/avatar-publisher.js.
+const avatarPublisher      = new avatar_publisher.AvatarPublisher();
+
+// Phase 4: shared importer turning accepted (or default) avatars into
+// scene nodes streamed to every client via the geometry pipeline.
+const sharedAvatarImporter = config.avatars.enabled ? new avatar_importer.DefaultAvatarImporter({
+    scene : sc,
+    clientManager : cm,
+    publish : (asset) => avatarPublisher.publish(asset),
+    defaultUrl : config.avatars.default_url,
+})
+                                                    : null;
+
 cm.SetClientDisconnectionCallback(function(clientID) {
     avatarNodeManager.destroyForClient(clientID);
+    if (sharedAvatarImporter)
+        sharedAvatarImporter.removeForClient(clientID);
 });
 
 // Monotonic per-process policy id used to tag every avatar-policy issued.
@@ -147,7 +168,10 @@ function onClientPostCreate(clientID)
     var client = cm.GetClient(clientID);
     client.SetScene(sc);
     // Spawn this client's server-provided avatar node (VRM as subscene).
-    if (config.avatars.subscene.enabled)
+    // Skipped when avatar negotiation is enabled: the negotiated flow
+    // imports a node per client itself (the client's own avatar or the
+    // default), and both at once would double up.
+    if (config.avatars.subscene.enabled && !config.avatars.enabled)
         avatarNodeManager.createForClient(clientID, client);
     // Enable the client's microphone track so the SFU can forward its voice.
     // Set before the client builds its SetupCommand (in Start()).
@@ -161,6 +185,8 @@ function onClientPostCreate(clientID)
     {
         if (sharedAvatarValidator)
             client.avatarService.validator = sharedAvatarValidator;
+        if (sharedAvatarImporter)
+            client.avatarService.importer = sharedAvatarImporter;
         const policy = buildAvatarPolicyForClient(clientID);
         console.log("Issuing avatar policy " + policy.policy_id + " to client " + clientID +
                     " (requirement=" + policy.requirement +
@@ -400,6 +426,12 @@ express_app.use(function(req, res, next) {
     }
     next();
 });
+// Re-hosted avatars (Phase 4). Content-addressed names, so responses are
+// immutable and cacheable forever. Registered before the static handlers
+// so /avatars/ never falls through to the filesystem.
+express_app.get('/avatars/:name', function(req, res) {
+    avatarPublisher.handleRequest(req, res);
+});
 express_app.use(express.static('dashboard_public'));
 // Also serve any static 3D resources when requested. Use absolute path so it works
 // regardless of the directory node was started from.
@@ -564,22 +596,31 @@ if (config.avatars.enabled)
     console.log("Avatars: enabled (requirement=" + config.avatars.requirement +
                 ", default_available=" + config.avatars.default_available +
                 ", formats=" + JSON.stringify(config.avatars.requirements.formats) +
-                ", validate=" + (sharedAvatarValidator ? "on" : "off") + ")");
+                ", validate=" + (sharedAvatarValidator ? "on" : "off") +
+                ", default=" + config.avatars.default_url + ")");
 }
 else
 {
     console.log("Avatars: disabled (set TELEPORT_AVATARS_ENABLED=1 to opt in)");
 }
 
-if (config.avatars.subscene.enabled)
-{
-    console.log("Avatar subscene nodes: enabled (url=" + config.avatars.subscene.url +
-                ", position=" + JSON.stringify(config.avatars.subscene.position) + ")");
-}
-else
+if (!config.avatars.subscene.enabled)
 {
     console.log(
         "Avatar subscene nodes: disabled (set TELEPORT_AVATAR_SUBSCENE_ENABLED=1 to opt in)");
+}
+else if (config.avatars.enabled)
+{
+    // Configured on, but the negotiated flow imports a node per client
+    // itself, so the legacy subscene node is never created. Say so rather
+    // than reporting "enabled" for something that will not happen.
+    console.log("Avatar subscene nodes: superseded by avatar negotiation" +
+                " (set TELEPORT_AVATARS_ENABLED=0 to use them instead)");
+}
+else
+{
+    console.log("Avatar subscene nodes: enabled (url=" + config.avatars.subscene.url +
+                ", position=" + JSON.stringify(config.avatars.subscene.position) + ")");
 }
 
 console.log(`Dashboard: http://localhost:${signaling_port}`);

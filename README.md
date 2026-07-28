@@ -64,6 +64,46 @@ directory.
 | `TELEPORT_ICE_SERVERS` | `[{"urls":"stun:stun.l.google.com:19302"}]` | JSON array of ICE server entries passed to the WebRTC peer connection. Operators that need TURN must set this to a JSON array including a `turn:`/`turns:` entry, e.g. `[{"urls":"stun:stun.l.google.com:19302"},{"urls":"turn:turn.example.com:3478","username":"u","credential":"p"}]`. Whitespace outside JSON string literals is stripped, so pretty-printed values pasted into a config UI parse correctly. A leading UTF-8 BOM is also tolerated. |
 | `TELEPORT_ICE_TRANSPORT_POLICY` | _unset_ (`all`) | Forces the `iceTransportPolicy` of the peer connection. Must be `all` or `relay`. Set to `relay` to force all media through TURN (useful for testing TURN configuration). |
 
+### Avatars
+
+When avatars are enabled the server sends each connecting client an
+`avatar-policy`, validates whatever avatar the client offers back
+(downloading it under strict size, time and SSRF limits, then measuring the
+glTF/VRM against the requirements below), and imports the result as a node in
+the shared scene so every other client sees it. A client that offers nothing
+acceptable gets the server's default avatar instead.
+
+Accepted avatars are **re-hosted by this server** under `/avatars/<sha256>.glb`
+and streamed to peers as ordinary geometry; a client's original avatar URL is
+never forwarded to other clients.
+
+The bundled default avatar (`http_resources/placeholder_avatar.glb`) is a
+blocky humanoid authored from scratch by `tools/make-placeholder-avatar.js`
+and covered by this project's MIT licence — regenerate it with
+`node tools/make-placeholder-avatar.js`. It is deliberately not the bundled
+`generic_avatar.vrm`, whose own embedded VRM metadata declares
+`licenseName: "Redistribution_Prohibited"` and `allowedUserName: "OnlyAuthor"`.
+Point `TELEPORT_AVATARS_DEFAULT_URL` at your own licensed asset for anything
+better-looking.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TELEPORT_AVATARS_ENABLED` | `1` (on) | Master switch for avatar negotiation. When off, the server falls back to the legacy static subscene avatar node. |
+| `TELEPORT_AVATARS_VALIDATE` | `1` (on) | Fetch, hash and measure offered avatars. When off, every offer is answered with `using_default` without a download. |
+| `TELEPORT_AVATARS_DEFAULT_URL` | `/placeholder_avatar.glb` | Server-relative URL of the default avatar used for `using_default` results. |
+| `TELEPORT_AVATARS_REQUIREMENT` | `optional` | `optional`, `required` or `forbidden` — whether clients must supply an avatar. |
+| `TELEPORT_AVATARS_DEFAULT_AVAILABLE` | `1` (on) | Whether the server will substitute its default. With this off and `REQUIREMENT=required`, unacceptable offers are rejected outright. |
+| `TELEPORT_AVATARS_FORMATS` | `glb,vrm` | Comma-separated allow-list of asset formats. A VRM is detected by its glTF extensions, so `glb` alone does **not** admit VRM files. |
+| `TELEPORT_AVATARS_MAX_FILE_BYTES` | `8000000` | Hard cap on the downloaded asset, enforced mid-stream. |
+| `TELEPORT_AVATARS_MAX_TRIANGLES` | `80000` | Triangle budget, summed across all mesh primitives. |
+| `TELEPORT_AVATARS_MAX_HEIGHT_M` | `2.5` | Bounding-box height limit in metres. |
+| `TELEPORT_AVATARS_MAX_WIDTH_M` | `2.5` | Larger horizontal bounding-box extent, in metres. Do not set this below the height limit: a T-posed humanoid's arm span is roughly its height. |
+| `TELEPORT_AVATARS_MAX_TEXTURES` | `8` | Maximum number of embedded images. |
+| `TELEPORT_AVATARS_MAX_TEXTURE_PIXELS` | `1048576` | Per-image pixel budget (width × height), read from PNG/JPEG/KTX2 headers. |
+| `TELEPORT_AVATARS_LICENCE_TAGS` | _unset_ (not enforced) | Comma-separated allow-list of licence tags, e.g. `cc0,cc-by`. Read from VRM metadata; assets with no declared licence are refused when this is set. |
+| `TELEPORT_AVATARS_SKELETON` | _unset_ (not enforced) | Required skeleton, e.g. `humanoid-mixamo`. VRM assets must carry a humanoid bone map; plain glTF assets must be skinned. |
+| `TELEPORT_AVATARS_FETCH_TIMEOUT_MS` | `15000` | Wall-clock budget for the whole fetch, hash and measure step. |
+
 ### Library variables
 
 The server example also inherits any environment variables read by the

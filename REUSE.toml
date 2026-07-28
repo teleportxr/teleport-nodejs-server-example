@@ -31,6 +31,7 @@ path = [
   "http_resources/environmentRenderTexture_-_renderTexture~~environmentRenderTexture.ktx2",
   "http_resources/specularCloudyCubemap.ktx2",
   "http_resources/specularRenderTexture_-_renderTexture~~specularRenderTexture.ktx2",
+  "http_resources/placeholder_avatar.glb",
   "http_resources/test_preview_sphere.glb",
   "http_resources/test_loop.mp3",
   "http_resources/test_loop.wav",
