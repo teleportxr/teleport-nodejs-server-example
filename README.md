@@ -69,13 +69,27 @@ directory.
 When avatars are enabled the server sends each connecting client an
 `avatar-policy`, validates whatever avatar the client offers back
 (downloading it under strict size, time and SSRF limits, then measuring the
-glTF/VRM against the requirements below), and imports the result as a node in
-the shared scene so every other client sees it. A client that offers nothing
-acceptable gets the server's default avatar instead.
+glTF/VRM against the requirements below), and adds it as a node in the shared
+scene so every other client sees it. A client that offers nothing acceptable
+gets the server's default avatar instead.
 
-Accepted avatars are **re-hosted by this server** under `/avatars/<sha256>.glb`
-and streamed to peers as ordinary geometry; a client's original avatar URL is
-never forwarded to other clients.
+Peers receive an accepted avatar as an ordinary scene node whose mesh is a
+pointer to a URL they fetch themselves. They are never told the node is an
+avatar, whose it is, or where it came from. Which URL that pointer carries
+depends on the delivery mode:
+
+* **Relay** (the default) — the client's own avatar URL. Peers fetch straight
+  from the avatar host, and this server serves none of the bytes. **The URL is
+  therefore visible to every other client in the session.** If your avatar
+  URLs carry bearer tokens, set `TELEPORT_AVATARS_ALLOW_RELAY=0`.
+* **Import** — the validated bytes re-hosted here under
+  `/avatars/<sha256>.glb`, so the client's own URL is never forwarded. Used
+  when relay is disabled, when the client sets `"allow_relay": false` on its
+  offer, when the offered URL has no `.glb`/`.vrm`/`.gltf` extension (clients
+  choose a decoder by extension), and for any single peer that reports it
+  could not fetch the relayed URL — a CORS-less avatar host, for instance.
+  That last fallback is per-peer and silent: the avatar's owner is not told,
+  and other peers keep using the relayed URL.
 
 The bundled default avatar (`http_resources/placeholder_avatar.glb`) is a
 blocky humanoid authored from scratch by `tools/make-placeholder-avatar.js`
@@ -93,6 +107,7 @@ better-looking.
 | `TELEPORT_AVATARS_DEFAULT_URL` | `/placeholder_avatar.glb` | Server-relative URL of the default avatar used for `using_default` results. |
 | `TELEPORT_AVATARS_REQUIREMENT` | `optional` | `optional`, `required` or `forbidden` — whether clients must supply an avatar. |
 | `TELEPORT_AVATARS_DEFAULT_AVAILABLE` | `1` (on) | Whether the server will substitute its default. With this off and `REQUIREMENT=required`, unacceptable offers are rejected outright. |
+| `TELEPORT_AVATARS_ALLOW_RELAY` | `1` (on) | Whether accepted avatar URLs may be handed to other clients to fetch. Off means every avatar is re-hosted here — slower and more bandwidth, but no client's URL ever reaches another client. |
 | `TELEPORT_AVATARS_FORMATS` | `glb,vrm` | Comma-separated allow-list of asset formats. A VRM is detected by its glTF extensions, so `glb` alone does **not** admit VRM files. |
 | `TELEPORT_AVATARS_MAX_FILE_BYTES` | `8000000` | Hard cap on the downloaded asset, enforced mid-stream. |
 | `TELEPORT_AVATARS_MAX_TRIANGLES` | `80000` | Triangle budget, summed across all mesh primitives. |

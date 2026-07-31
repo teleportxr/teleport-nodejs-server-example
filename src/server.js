@@ -187,11 +187,13 @@ function onClientPostCreate(clientID)
             client.avatarService.validator = sharedAvatarValidator;
         if (sharedAvatarImporter)
             client.avatarService.importer = sharedAvatarImporter;
-        const policy = buildAvatarPolicyForClient(clientID);
+        client.avatarService.allowRelay = config.avatars.allow_relay;
+        const policy                    = buildAvatarPolicyForClient(clientID);
         console.log("Issuing avatar policy " + policy.policy_id + " to client " + clientID +
                     " (requirement=" + policy.requirement +
                     ", default_available=" + policy.default_available +
-                    ", validate=" + (sharedAvatarValidator ? "on" : "off") + ")");
+                    ", validate=" + (sharedAvatarValidator ? "on" : "off") +
+                    ", relay=" + (config.avatars.allow_relay ? "on" : "off") + ")");
         client.avatarService.sendPolicy(policy);
     }
 }
@@ -597,7 +599,14 @@ if (config.avatars.enabled)
                 ", default_available=" + config.avatars.default_available +
                 ", formats=" + JSON.stringify(config.avatars.requirements.formats) +
                 ", validate=" + (sharedAvatarValidator ? "on" : "off") +
+                ", relay=" + (config.avatars.allow_relay ? "on" : "off") +
                 ", default=" + config.avatars.default_url + ")");
+    if (config.avatars.allow_relay)
+    {
+        console.log("Avatars: relay is on — accepted avatar URLs are handed to other " +
+                    "clients, which fetch them directly. Set TELEPORT_AVATARS_ALLOW_RELAY=0 " +
+                    "to re-host every avatar instead.");
+    }
 }
 else
 {

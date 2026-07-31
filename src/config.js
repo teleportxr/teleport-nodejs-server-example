@@ -79,6 +79,14 @@ const config = {
         // client offers nothing acceptable. Phase 2 always responds with
         // using_default=true; this flag becomes load-bearing in phase 5.
         default_available : envBool('TELEPORT_AVATARS_DEFAULT_AVAILABLE', true),
+        // Relay is the default delivery mode: an accepted avatar's mesh
+        // pointer carries the owner's own url, so peers fetch it from the
+        // avatar host and we serve none of the bytes. The trade-off is
+        // that the url is then visible to every other client — set this
+        // to 0 for deployments where the url is itself a secret, and the
+        // server will re-host every avatar instead. Individual clients can
+        // opt out per-avatar with "allow_relay": false on their offer.
+        allow_relay : envBool('TELEPORT_AVATARS_ALLOW_RELAY', true),
         // Free-form requirements bag forwarded verbatim in the policy.
         // Snake_case to match the protocol doc (signaling.rst §Avatar
         // negotiation) so values round-trip without renaming. The
