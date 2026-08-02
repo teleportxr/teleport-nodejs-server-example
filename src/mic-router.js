@@ -100,13 +100,20 @@ class MicRouter
         }
     }
 
-    // The head position {x,y,z} for a connection's client, or null if unknown.
+    // The head position {x,y,z} for a connection's client in the server's GLOBAL
+    // space, or null if unknown. Clients report their head in their own stage
+    // space, so the raw pose is only comparable between two clients when both
+    // origins coincide — proximity selection needs the global position.
     _position(connId)
     {
         const c = (this.clientManager && typeof this.clientManager.GetClient === 'function')
                       ? this.clientManager.GetClient(connId)
                       : null;
-        return (c && typeof c.GetHeadPosition === 'function') ? c.GetHeadPosition() : null;
+        if (!c)
+            return null;
+        if (typeof c.GetGlobalHeadPosition === 'function')
+            return c.GetGlobalHeadPosition();
+        return (typeof c.GetHeadPosition === 'function') ? c.GetHeadPosition() : null;
     }
 
     // Choose which sources `listener` should hear. Returns Map(originUid(BigInt) -> source).

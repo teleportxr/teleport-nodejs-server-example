@@ -79,24 +79,64 @@ test('createForClient is idempotent per client', () => {
     assert.strictEqual(uid1, uid2);
 });
 
-test('destroyForClient removes the node and unstreams it for remaining clients', () => {
-    const {mgr, scene, clientManager} = makeManager(cfg);
-    const clientA                     = makeFakeClient();
-    const uid                         = mgr.createForClient('clientA', clientA);
+test('destroyForClient removes the node from the scene, which is what makes clients drop it',
+     () => {
+         const {mgr, scene, clientManager} = makeManager(cfg);
+         const clientA                     = makeFakeClient();
+         const uid                         = mgr.createForClient('clientA', clientA);
 
-    const clientB                     = makeFakeClient();
-    const clientC                     = makeFakeClient();
-    clientManager.clients.set('clientB', clientB);
-    clientManager.clients.set('clientC', clientC);
+         const clientB                     = makeFakeClient();
+         const clientC                     = makeFakeClient();
+         clientManager.clients.set('clientB', clientB);
+         clientManager.clients.set('clientC', clientC);
+
+         mgr.destroyForClient('clientA');
+
+         assert.ok(!scene.nodes.has(uid), 'node must be removed from the scene');
+         // Each client's next UpdateVisibleNodes pass finds the node gone from
+         // its visible set and queues its own RemoveNodes payload. The manager
+         // must NOT reach into other clients' geometry services to do it by hand.
+         assert.deepStrictEqual(clientB.geometryService.unstreamed, []);
+         assert.deepStrictEqual(clientC.geometryService.unstreamed, []);
+         // A second destroy is a harmless no-op.
+         assert.doesNotThrow(() => mgr.destroyForClient('clientA'));
+     });
+
+test('the avatar node is registered to its client, parented under its origin', () => {
+    const {ClientNodeRegistry, NodeVisibility} = require('teleportxr/client/client_nodes');
+    const scene                                = makeFakeScene();
+    // The registry stamps ownership onto the scene node, so it needs GetNode.
+    scene.GetNode = (uid) => scene.nodes.get(uid) || null;
+    const registry         = new ClientNodeRegistry(scene);
+    const clientManager    = {clients : new Map(), clientNodes : registry};
+    const mgr              = new AvatarNodeManager(scene, clientManager, cfg);
+    const client           = makeFakeClient();
+    client.origin_uid      = 4242n;
+
+    const uid              = mgr.createForClient('clientA', client);
+    assert.strictEqual(scene.nodes.get(uid).parent_uid, 4242n,
+                       'the avatar must follow its owner\'s local space');
+    assert.strictEqual(registry.ownerOf(uid), 'clientA');
+    assert.strictEqual(registry.roleOf(uid), 'avatar');
+    assert.strictEqual(registry.visibilityOf(uid), NodeVisibility.Everyone);
 
     mgr.destroyForClient('clientA');
+    assert.strictEqual(registry.ownerOf(uid), 0);
+});
 
-    assert.ok(!scene.nodes.has(uid), 'node must be removed from the scene');
-    assert.deepStrictEqual(clientB.geometryService.unstreamed, [ uid ]);
-    assert.deepStrictEqual(clientC.geometryService.unstreamed, [ uid ]);
-    // A second destroy is a harmless no-op.
-    mgr.destroyForClient('clientA');
-    assert.deepStrictEqual(clientB.geometryService.unstreamed, [ uid ]);
+test('sendOwnAvatar=false keeps a client from being sent its own avatar', () => {
+    const {ClientNodeRegistry} = require('teleportxr/client/client_nodes');
+    const scene                = makeFakeScene();
+    scene.GetNode = (uid) => scene.nodes.get(uid) || null;
+    const registry         = new ClientNodeRegistry(scene);
+    const mgr    = new AvatarNodeManager(scene, {clients : new Map(), clientNodes : registry},
+                                         Object.assign({}, cfg, {sendOwnAvatar : false}));
+    const client = makeFakeClient();
+
+    const uid    = mgr.createForClient('clientA', client);
+    assert.strictEqual(registry.isVisibleTo(uid, 'clientA'), false);
+    assert.strictEqual(registry.isVisibleTo(uid, 'clientB'), true);
+    assert.deepStrictEqual(client.geometryService.streamed, []);
 });
 
 test('destroyForClient for a client with no avatar node is a no-op', () => {

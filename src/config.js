@@ -156,6 +156,11 @@ const config = {
         // redistribution. Point this at your own licensed asset if you
         // want something better-looking.
         default_url : process.env.TELEPORT_AVATARS_DEFAULT_URL || '/placeholder_avatar.glb',
+        // Whether a client is sent its own avatar node as well as its peers'.
+        // On by default, which is what a third-person view wants. Turn it off
+        // for a first-person client, which would otherwise be looking out from
+        // inside its own head.
+        send_own_avatar : envBool('TELEPORT_AVATARS_SEND_OWN', true),
         // Hard wall-clock budget on the entire fetch+hash step. Mirrors
         // the policy.fetch_timeout_ms field on the wire.
         fetch_timeout_ms : envInt('TELEPORT_AVATARS_FETCH_TIMEOUT_MS', 15000),
@@ -173,6 +178,9 @@ const config = {
             enabled : envBool('TELEPORT_AVATAR_SUBSCENE_ENABLED', true),
             url : process.env.TELEPORT_AVATAR_SUBSCENE_URL || '/generic_avatar.vrm',
             position : envFloatList('TELEPORT_AVATAR_SUBSCENE_POSITION', [ 0, 0, 0 ]),
+            // Same switch as avatars.send_own_avatar, applied to this legacy
+            // path so both behave alike.
+            sendOwnAvatar : envBool('TELEPORT_AVATARS_SEND_OWN', true),
         },
     },
     // How connecting clients are recognised as new or returning users.
@@ -207,6 +215,19 @@ const config = {
         // Cap on remembered users, since the store is keyed by client-supplied
         // strings.
         maxUsers : envInt('TELEPORT_IDENTITY_MAX_USERS', 10000),
+    },
+    // Lifetime of client-specific nodes (a client's origin node, its avatar)
+    // after the client has gone. Held rather than destroyed immediately, so a
+    // client that drops and reconnects within the window keeps the nodes it
+    // already had and its peers see no interruption.
+    client : {
+        // Grace period for a client the server can recognise on its return,
+        // i.e. one with a resolved identity. See config.identity.
+        graceMs : envInt('TELEPORT_CLIENT_GRACE_MS', 10000),
+        // Grace period for an anonymous client. Zero by default: with no stable
+        // identity there is nothing to match a returning client against, so
+        // holding its nodes only delays the inevitable.
+        anonymousGraceMs : envInt('TELEPORT_CLIENT_GRACE_ANONYMOUS_MS', 0),
     },
     // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
     // forwards each participant's microphone to the others on per-source tracks

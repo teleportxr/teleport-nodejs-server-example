@@ -93,14 +93,25 @@ function createNewClient(clientID, sigSend)
 }
 cm.SetCreateClientCallback(createNewClient);
 
-// It must return the origin uid for the client.
+// It must return the origin uid for the client: the origin of that client's
+// local tracking space, placed as a node in this server's global space. The
+// client composes its own head and controller poses on top of it. The node is
+// registered as belonging to this client, so it is destroyed with the session
+// rather than accumulating one dead "Player" per connection.
 function createNewClientNode(clientID)
 {
-    var player     = new custom_player.CustomPlayerNode();
     var origin_uid = sc.CreateNode("Player");
     return origin_uid;
 }
 cm.SetNewClientNodeCallback(createNewClientNode);
+
+// How long this client's nodes outlive a disconnection, waiting for it to come
+// back. See config.client.
+cm.SetGracePeriodMs(config.client.graceMs, config.client.anonymousGraceMs);
+// The scene client-specific nodes live in. Picked up automatically from the
+// first client, but set explicitly so the registry can destroy nodes even if a
+// client disconnects before it is given a scene.
+cm.SetScene(sc);
 
 // Server-provided avatar nodes: one VRM subscene node per client, lifetime
 // scoped to the client's session. See src/avatar-nodes.js. Superseded by
@@ -119,9 +130,14 @@ const sharedAvatarImporter = config.avatars.enabled ? new avatar_importer.Defaul
     clientManager : cm,
     publish : (asset) => avatarPublisher.publish(asset),
     defaultUrl : config.avatars.default_url,
+    sendOwnAvatar : config.avatars.send_own_avatar,
 })
                                                     : null;
 
+// Client-specific nodes are destroyed by the client-node registry, so there is
+// nothing left here to tear down: this callback only drops the bookkeeping the
+// avatar managers keep alongside it. It fires when the grace period expires,
+// not the moment the socket closes.
 cm.SetClientDisconnectionCallback(function(clientID) {
     avatarNodeManager.destroyForClient(clientID);
     if (sharedAvatarImporter)

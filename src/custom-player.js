@@ -25,11 +25,9 @@ class CustomClient extends cl.Client{
         // sign2_uid = this.scene.GetNodeUidByName("sign2");
     } PostSceneInit()
     {
-        var node_uids = this.scene.GetAllNodeUids();
-        for (let uid of node_uids)
-        {
-            this.geometryService.StreamNode(uid);
-        }
+        // Nothing to do: the streaming pass derives what this client should see
+        // from the scene and the client-node registry on every tick, including
+        // the first. Streaming everything by hand here would only fight it.
     } Update()
     {
         console.log("Update player")
