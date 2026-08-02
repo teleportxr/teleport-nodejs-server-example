@@ -46,6 +46,7 @@ const signaling        = require("teleportxr/signaling");
 const avatars_proto    = require("teleportxr/protocol/avatars");
 const avatar_validator = require("teleportxr/client/avatar_validator");
 const avatar_importer  = require("teleportxr/client/avatar_importer");
+const oidc_verifier    = require("teleportxr/identity/oidc_verifier");
 const avatar_publisher = require('./avatar-publisher.js');
 const express          = require('express');
 const http             = require('http');
@@ -159,8 +160,24 @@ function buildAvatarPolicyForClient(clientID)
 }
 
 // This will be called AFTER a client has been created, so we can access it from the clientManager.
-function onClientPostCreate(clientID)
+// `user` is the resolved identity: { tier, key, record, isNewUser }, or null for
+// an anonymous client. Whether to act on it is each server's decision — this one
+// only reports it, and lets the avatar service reuse what it already validated.
+function onClientPostCreate(clientID, user)
 {
+    if (!user || user.tier === 'anonymous')
+    {
+        console.log("Client " + clientID + " connected anonymously.");
+    }
+    else
+    {
+        const name = user.record.displayName || '(no name)';
+        console.log("Client " + clientID + " is a " + (user.isNewUser ? "NEW" : "RETURNING") +
+                    " user: " + name + " [" + user.tier + "] visits=" + user.record.visits +
+                    (user.record.avatar ? ", avatar remembered" : ""));
+        if (user.tier === 'asserted')
+            console.log("  (unverified — the client's claim is taken at face value)");
+    }
     // The WebSocket upgrade captured the Host header before this callback fires,
     // so auto-detection has the data it needs. Update the resource URL now,
     // before the client builds its SetupCommand and starts streaming resources.
@@ -369,7 +386,33 @@ if (process.env.TELEPORT_ICE_TRANSPORT_POLICY)
         console.error("TELEPORT_ICE_TRANSPORT_POLICY must be 'all' or 'relay'; ignoring.");
 }
 
-const wss       = teleport_server.initServer(undefined, {iceServers, iceTransportPolicy});
+// Identity: recognise returning users. With no issuers configured this still
+// distinguishes them, but on the client's unverified word alone — see
+// config.identity.
+const identityVerifier = new teleport_server.IdentityVerifier();
+if (Array.isArray(config.identity.issuers) && config.identity.issuers.length)
+{
+    const issuers = config.identity.issuers.map((i) => new oidc_verifier.IssuerConfig(i));
+    identityVerifier.register(oidc_verifier.CREDENTIAL_TYPE,
+                              new oidc_verifier.OidcVerifier(issuers));
+    console.log("identity: verifying id_tokens from " + issuers.map((i) => i.iss).join(', '));
+}
+else
+{
+    console.log("identity: no issuers configured; connecting clients stay unverified. " +
+                "Set TELEPORT_IDENTITY_ISSUERS to verify them.");
+}
+
+const wss       = teleport_server.initServer(undefined, {
+    iceServers,
+    iceTransportPolicy,
+    identity : {
+        store : new teleport_server.MemoryUserStore({maxUsers : config.identity.maxUsers}),
+        verifier : identityVerifier,
+        requireVerified : config.identity.requireVerified,
+        challengeTimeoutMs : config.identity.challengeTimeoutMs,
+    },
+      });
 
 // SFU: forward each connected client's microphone audio to every other client.
 // The router shares the library's WebRtcConnectionManager singleton, so it sees

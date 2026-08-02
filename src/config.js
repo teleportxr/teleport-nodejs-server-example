@@ -40,6 +40,26 @@ function envList(name, fallback)
     return String(v).split(',').map(s => s.trim()).filter(s => s.length > 0);
 }
 
+// Parse a JSON-valued variable. A malformed value is loud but not fatal: the
+// server starts with the fallback rather than refusing to boot, and the
+// operator sees why in the log.
+function envJson(name, fallback)
+{
+    const v = process.env[name];
+    if (v == null || v === '')
+        return fallback;
+    try
+    {
+        return JSON.parse(v);
+    }
+    catch (err)
+    {
+        console.warn('config: ' + name + ' is not valid JSON (' + err.message +
+                     '); using the default.');
+        return fallback;
+    }
+}
+
 function envFloat(name, fallback)
 {
     const v = process.env[name];
@@ -154,6 +174,39 @@ const config = {
             url : process.env.TELEPORT_AVATAR_SUBSCENE_URL || '/generic_avatar.vrm',
             position : envFloatList('TELEPORT_AVATAR_SUBSCENE_POSITION', [ 0, 0, 0 ]),
         },
+    },
+    // How connecting clients are recognised as new or returning users.
+    //
+    // With no issuers configured the server still tells returning users apart,
+    // but only on the client's own say-so: `identity` in the connect message is
+    // self-asserted, so that tier is good for convenience (remembering an
+    // avatar) and nothing else.
+    //
+    // Configure issuers to get real verification. TELEPORT_IDENTITY_ISSUERS is a
+    // JSON array; treat it as sensitive configuration alongside
+    // TELEPORT_ICE_SERVERS.
+    //
+    //   [{"iss":"https://accounts.google.com",
+    //     "jwksUri":"https://www.googleapis.com/oauth2/v3/certs",
+    //     "audiences":["<desktop-client-id>","<device-client-id>"],
+    //     "subjectScope":"public"}]
+    //
+    // subjectScope matters: 'public' (Google) means one subject per user across
+    // every client id, so the desktop and headless clients resolve to the same
+    // person. 'pairwise' (Apple, Microsoft Entra) means the subject differs per
+    // client id, and the audience becomes part of the user's key.
+    identity : {
+        issuers : envJson('TELEPORT_IDENTITY_ISSUERS', []),
+        // Treat unverified clients as anonymous, remembering nothing about
+        // them. Off by default so the reference client — which does not yet
+        // send a credential — keeps working.
+        requireVerified : envBool('TELEPORT_IDENTITY_REQUIRE_VERIFIED', false),
+        // How long to wait for a client to answer an identity challenge before
+        // continuing without it.
+        challengeTimeoutMs : envInt('TELEPORT_IDENTITY_CHALLENGE_TIMEOUT_MS', 5000),
+        // Cap on remembered users, since the store is keyed by client-supplied
+        // strings.
+        maxUsers : envInt('TELEPORT_IDENTITY_MAX_USERS', 10000),
     },
     // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
     // forwards each participant's microphone to the others on per-source tracks
