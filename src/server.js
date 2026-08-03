@@ -47,6 +47,7 @@ const avatars_proto    = require("teleportxr/protocol/avatars");
 const avatar_validator = require("teleportxr/client/avatar_validator");
 const avatar_importer  = require("teleportxr/client/avatar_importer");
 const oidc_verifier    = require("teleportxr/identity/oidc_verifier");
+const motion           = require("teleportxr/client/motion");
 const avatar_publisher = require('./avatar-publisher.js');
 const express          = require('express');
 const http             = require('http');
@@ -228,6 +229,25 @@ function onClientPostCreate(clientID, user)
                     ", validate=" + (sharedAvatarValidator ? "on" : "off") +
                     ", relay=" + (config.avatars.allow_relay ? "on" : "off") + ")");
         client.avatarService.sendPolicy(policy);
+    }
+    // Server-driven avatar motion: keep this client's own avatar on the ground a
+    // fixed distance in front of its camera. The controller resolves its node by
+    // role rather than uid, because with negotiated avatars the node does not exist
+    // yet — it is imported when the client responds to the policy above.
+    if (config.follower.enabled)
+    {
+        const follower = new motion.FollowCameraController({
+            nodeRole : 'avatar',
+            followDistance : config.follower.distance,
+            facing : config.follower.facing,
+            deadZone : config.follower.deadZone,
+            tau : config.follower.tau,
+            maxSpeed : config.follower.maxSpeed,
+            ground : new motion.FlatGround(config.follower.groundHeight),
+        });
+        client.AddMotionController(follower);
+        console.log("Follower avatar enabled for client " + clientID + " (distance=" +
+                    config.follower.distance + "m, facing=" + config.follower.facing + ")");
     }
 }
 cm.SetClientPostCreationCallback(onClientPostCreate);

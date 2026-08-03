@@ -229,6 +229,30 @@ const config = {
         // holding its nodes only delays the inevitable.
         anonymousGraceMs : envInt('TELEPORT_CLIENT_GRACE_ANONYMOUS_MS', 0),
     },
+    // Server-driven motion for the client's own avatar: the desktop model in which
+    // the avatar is visible ahead of the camera and the server keeps it there, on the
+    // ground. Implemented by teleportxr's FollowCameraController (client/motion/).
+    //
+    // Off by default: it only makes sense when the client can see its own avatar
+    // (avatars.send_own_avatar), and existing deployments should be unaffected.
+    follower : {
+        enabled : envBool('TELEPORT_FOLLOWER_ENABLED', false),
+        // Metres in front of the camera.
+        distance : envFloat('TELEPORT_FOLLOWER_DISTANCE', 2.0),
+        // 'away'     — avatar faces where the camera looks; the user sees its back.
+        // 'toward'   — avatar faces the user.
+        // 'velocity' — avatar faces its direction of travel while moving.
+        facing : process.env.TELEPORT_FOLLOWER_FACING || 'away',
+        // Target displacement below which the follower parks and sends nothing.
+        deadZone : envFloat('TELEPORT_FOLLOWER_DEAD_ZONE', 0.15),
+        // Exponential approach time constant, seconds. Larger lags further behind.
+        tau : envFloat('TELEPORT_FOLLOWER_TAU', 0.25),
+        // Metres per second the follower will not exceed.
+        maxSpeed : envFloat('TELEPORT_FOLLOWER_MAX_SPEED', 4.0),
+        // Ground height in the client's stage space. Zero is the floor the client is
+        // standing on, which is what the OpenXR stage-space convention gives us.
+        groundHeight : envFloat('TELEPORT_FOLLOWER_GROUND_HEIGHT', 0.0),
+    },
     // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
     // forwards each participant's microphone to the others on per-source tracks
     // bound to the emitting node (mid = node uid; see docs/protocol/audio.rst).

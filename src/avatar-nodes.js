@@ -48,6 +48,10 @@ class AvatarNodeManager
         const p            = this.cfg.position || [ 0, 0, 0 ];
         node.pose.position = {x : p[0], y : p[1], z : p[2]};
         node.parent_uid    = (client && client.origin_uid) ? client.origin_uid : 0;
+        // Not stationary: the client early-outs on isStatic in
+        // Node::TickExtrapolatedTransform, so a node encoded as stationary can never be
+        // moved by an UpdateNodeMovement command afterwards.
+        node.stationary    = false;
         node.setMeshComponent(this.cfg.url);
         const uid = this.scene.InsertNode(node);
         this.nodeByClient.set(clientID, uid);
