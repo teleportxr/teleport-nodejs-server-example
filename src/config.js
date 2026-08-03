@@ -236,7 +236,7 @@ const config = {
     // Off by default: it only makes sense when the client can see its own avatar
     // (avatars.send_own_avatar), and existing deployments should be unaffected.
     follower : {
-        enabled : envBool('TELEPORT_FOLLOWER_ENABLED', false),
+        enabled : envBool('TELEPORT_FOLLOWER_ENABLED', true),
         // Metres in front of the camera.
         distance : envFloat('TELEPORT_FOLLOWER_DISTANCE', 2.0),
         // 'away'     — avatar faces where the camera looks; the user sees its back.
