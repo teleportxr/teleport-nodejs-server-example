@@ -155,7 +155,7 @@ const config = {
         // "OnlyAuthor", and serving it to every connecting client is
         // redistribution. Point this at your own licensed asset if you
         // want something better-looking.
-        default_url : process.env.TELEPORT_AVATARS_DEFAULT_URL || '/placeholder_avatar.glb',
+        default_url : process.env.TELEPORT_AVATARS_DEFAULT_URL || '/generic_avatar.vrm',
         // Whether a client is sent its own avatar node as well as its peers'.
         // On by default, which is what a third-person view wants. Turn it off
         // for a first-person client, which would otherwise be looking out from
