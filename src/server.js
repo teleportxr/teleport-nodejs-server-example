@@ -236,6 +236,16 @@ function onClientPostCreate(clientID, user)
     // yet — it is imported when the client responds to the policy above.
     if (config.follower.enabled)
     {
+        // The animator, when enabled, is fed the follower's own smoothed ground speed once
+        // per motion tick and emits an ApplyAnimation only when the locomotion state
+        // changes. It resolves the same node by the same role, for the same reason.
+        const anim     = config.follower.animation;
+        const animator = (anim && anim.enabled) ? new motion.FollowerAnimator({
+            nodeRole : 'avatar',
+            clips : anim.clips,
+            blendLeadUs : Math.round(anim.blendSeconds * 1e6),
+        })
+                                                : null;
         const follower = new motion.FollowCameraController({
             nodeRole : 'avatar',
             followDistance : config.follower.distance,
@@ -244,10 +254,12 @@ function onClientPostCreate(clientID, user)
             tau : config.follower.tau,
             maxSpeed : config.follower.maxSpeed,
             ground : new motion.FlatGround(config.follower.groundHeight),
+            animator : animator,
         });
         client.AddMotionController(follower);
         console.log("Follower avatar enabled for client " + clientID + " (distance=" +
-                    config.follower.distance + "m, facing=" + config.follower.facing + ")");
+                    config.follower.distance + "m, facing=" + config.follower.facing +
+                    ", animation=" + (animator ? "on" : "off") + ")");
     }
 }
 cm.SetClientPostCreationCallback(onClientPostCreate);

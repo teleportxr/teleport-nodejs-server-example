@@ -252,6 +252,35 @@ const config = {
         // Ground height in the client's stage space. Zero is the floor the client is
         // standing on, which is what the OpenXR stage-space convention gives us.
         groundHeight : envFloat('TELEPORT_FOLLOWER_GROUND_HEIGHT', 0.0),
+        // Skeletal animation for the follower: idle when parked, walk when following,
+        // run on a fast step, driven by the follower's own ground speed.
+        //
+        // OFF BY DEFAULT, and this is a client-version dependency, not a taste setting.
+        // Playing an animation on a streamed avatar needs a client carrying the sub-scene
+        // animation routing: without it the avatar's skeleton lives in a cache the server
+        // has never seen, and every ApplyAnimation is silently dropped. Older clients
+        // additionally dereference an unresolvable cacheID without a null check and crash.
+        // Turn this on only against clients built from the same source revision.
+        animation : {
+            enabled : envBool('TELEPORT_FOLLOWER_ANIMATION', true),
+            // Clips, served from http_resources/. Each needs an extension the client can
+            // dispatch on (.vrma/.glb/.vrm/.gltf) and joint names matching the avatar's
+            // humanoid rig — retargeting matches on names, so a clip authored for a
+            // different naming convention will not play.
+            //
+            // duration (seconds) is what lets the phase carry across a change of clip; get
+            // it wrong and the footfall hitches at each transition. refSpeed (m/s) is the
+            // ground speed the clip was authored for, and sets the playback rate that stops
+            // the feet sliding.
+            clips : {
+                idle : {url : '/avatar_anim/Idle.vrma', duration : 2.0},
+                walk : {url : '/avatar_anim/Walking.vrma', duration : 1.0, refSpeed : 1.4},
+                run : {url : '/avatar_anim/Running.vrma', duration : 0.7, refSpeed : 3.5},
+            },
+            // Cross-fade duration, seconds. The state is dated this far ahead and the
+            // client interpolates to it. Zero would snap.
+            blendSeconds : envFloat('TELEPORT_FOLLOWER_BLEND_SECONDS', 0.15),
+        },
     },
     // Spatial-audio SFU selection policy, read by src/mic-router.js. The server
     // forwards each participant's microphone to the others on per-source tracks
