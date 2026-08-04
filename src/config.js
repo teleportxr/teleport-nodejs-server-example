@@ -272,10 +272,26 @@ const config = {
             // it wrong and the footfall hitches at each transition. refSpeed (m/s) is the
             // ground speed the clip was authored for, and sets the playback rate that stops
             // the feet sliding.
+            //
+            // axesStandard is the frame the clip file itself is authored in. A .vrma is
+            // glTF, so 'gl' (Y-up right-handed) whatever this scene uses. It MUST match the
+            // declaration the avatar gets in assets/scene.json: retargeting maps joints by
+            // name between the clip's skeleton and the avatar's, and a skeleton imported in
+            // one frame cannot drive one imported in another.
             clips : {
-                idle : {url : '/avatar_anim/Idle.vrma', duration : 2.0},
-                walk : {url : '/avatar_anim/Walking.vrma', duration : 1.0, refSpeed : 1.4},
-                run : {url : '/avatar_anim/Running.vrma', duration : 0.7, refSpeed : 3.5},
+                idle : {url : '/avatar_anim/Idle.vrma', duration : 2.0, axesStandard : 'gl'},
+                walk : {
+                    url : '/avatar_anim/Walking.vrma',
+                    duration : 1.0,
+                    refSpeed : 1.4,
+                    axesStandard : 'gl'
+                },
+                run : {
+                    url : '/avatar_anim/Running.vrma',
+                    duration : 0.7,
+                    refSpeed : 3.5,
+                    axesStandard : 'gl'
+                },
             },
             // Cross-fade duration, seconds. The state is dated this far ahead and the
             // client interpolates to it. Zero would snap.

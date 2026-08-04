@@ -1,71 +1,173 @@
 {
-	"environment":{"background_texture":"/envCloudyCubemap.ktx2",
-				"diffuse_cubemap":"/diffuseCloudyCubemap.ktx2",
-				"specular_cubemap":"/specularCloudyCubemap.ktx2"},
-	"nodes":{
-		"tree1":{
-			"pose":{
-				"position":[-3,8,0]
-				,"orientation":[0,0,0,1]
-				,"scale":[1.0,1.0,1.0]
-			},
-			"components":[
-				{"type":"mesh"
-				,"url":"/Tree.glb"}]
-		},
-		"buggy":{
-			"pose":{
-				"position":[0,0,0]
-				,"orientation":[0,0,0,1]
-				,"scale":[0.01,0.01,0.01]
-			},
-			"components":[
-				{"type":"mesh"
-				,"url":"https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@main/2.0/Buggy/glTF-Binary/Buggy.glb"}]
-		},
-		"sphere":{
-			"pose":{
-				"position":[0,2,1]
-				,"orientation":[0,0,0,1]
-				,"scale":[1.0,1.0,1.0]
-			},
-			"components":[
-				{"type":"mesh"
-				,"url":"/test_preview_sphere.glb"}]
-		},
-		"sphere2":{
-			"pose":{
-				"position":[4,2,1]
-				,"orientation":[0,0,0,1]
-				,"scale":[1.0,1.0,1.0]
-			},
-			"components":[
-				{"type":"mesh"
-					,"url":"/test_preview_sphere.glb"}
-			]
-		},
-		"sign":{
-			"pose":{
-				"position":[0,3,3]
-				,"orientation":[0.707,0,0,0.707]
-				,"scale":[0.5,0.5,1.0]
-			},
-			"components":[
-				{"type":"canvas"
-				,"url":"test_canvas"}]
-		},
-		"sign2":{
-			"pose":{
-				"position":[0,3,3]
-				,"orientation":[0.707,0,0,0.707]
-				,"scale":[0.5,0.5,1.0]
-			},
-			"components":[
-				{"type":"canvas"
-				,"url":"test_canvas2"}]
+	"environment": {
+		"background_texture": "/envCloudyCubemap.ktx2",
+		"diffuse_cubemap": "/diffuseCloudyCubemap.ktx2",
+		"specular_cubemap": "/specularCloudyCubemap.ktx2"
+	},
+	"meshes": {
+		"/generic_avatar.vrm": {
+			"axes_standard": "gl"
 		}
 	},
-	"font_atlases":[
+	"nodes": {
+		"tree1": {
+			"pose": {
+				"position": [
+					-3,
+					8,
+					0
+				],
+				"orientation": [
+					0,
+					0,
+					0,
+					1
+				],
+				"scale": [
+					1.0,
+					1.0,
+					1.0
+				]
+			},
+			"components": [
+				{
+					"type": "mesh",
+					"url": "/Tree.glb"
+				}
+			]
+		},
+		"buggy": {
+			"pose": {
+				"position": [
+					0,
+					0,
+					0
+				],
+				"orientation": [
+					0,
+					0,
+					0,
+					1
+				],
+				"scale": [
+					0.01,
+					0.01,
+					0.01
+				]
+			},
+			"components": [
+				{
+					"type": "mesh",
+					"url": "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@main/2.0/Buggy/glTF-Binary/Buggy.glb"
+				}
+			]
+		},
+		"sphere": {
+			"pose": {
+				"position": [
+					0,
+					2,
+					1
+				],
+				"orientation": [
+					0,
+					0,
+					0,
+					1
+				],
+				"scale": [
+					1.0,
+					1.0,
+					1.0
+				]
+			},
+			"components": [
+				{
+					"type": "mesh",
+					"url": "/test_preview_sphere.glb"
+				}
+			]
+		},
+		"sphere2": {
+			"pose": {
+				"position": [
+					4,
+					2,
+					1
+				],
+				"orientation": [
+					0,
+					0,
+					0,
+					1
+				],
+				"scale": [
+					1.0,
+					1.0,
+					1.0
+				]
+			},
+			"components": [
+				{
+					"type": "mesh",
+					"url": "/test_preview_sphere.glb"
+				}
+			]
+		},
+		"sign": {
+			"pose": {
+				"position": [
+					0,
+					3,
+					3
+				],
+				"orientation": [
+					0.707,
+					0,
+					0,
+					0.707
+				],
+				"scale": [
+					0.5,
+					0.5,
+					1.0
+				]
+			},
+			"components": [
+				{
+					"type": "canvas",
+					"url": "test_canvas"
+				}
+			]
+		},
+		"sign2": {
+			"pose": {
+				"position": [
+					0,
+					3,
+					3
+				],
+				"orientation": [
+					0.707,
+					0,
+					0,
+					0.707
+				],
+				"scale": [
+					0.5,
+					0.5,
+					1.0
+				]
+			},
+			"components": [
+				{
+					"type": "canvas",
+					"url": "test_canvas2"
+				}
+			]
+		}
+	},
+	"font_atlases": [
 		{
 			"path": "/venti.font_atlas",
 			"font_texture_path": "/venti.ktx2"
@@ -74,19 +176,21 @@
 			"font": "/DejaVuSerif.ttf"
 		}
 	],
-	"canvases":{
-		"test_canvas":{
-			"font": "/DejaVuSerif.ttf"
-			,"lineHeight": 1.0
-			,"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
+	"canvases": {
+		"test_canvas": {
+			"font": "/DejaVuSerif.ttf",
+			"lineHeight": 1.0,
+			"content": "Testing the text canvas\nWhat can we write?\nHow many lines, and how long could they be? As long as this?\nAnd how are they laid out?"
 		},
-		"test_canvas2":{
-			"font": "/DejaVuSerif.ttf"
-			,"lineHeight": 2.0
-			,"content": ["This is a text canvas",
-						"Can we newline this way?",
-						"Yes, just put an array of strings instead",
-						"of a single string!"]
+		"test_canvas2": {
+			"font": "/DejaVuSerif.ttf",
+			"lineHeight": 2.0,
+			"content": [
+				"This is a text canvas",
+				"Can we newline this way?",
+				"Yes, just put an array of strings instead",
+				"of a single string!"
+			]
 		}
 	}
 }
