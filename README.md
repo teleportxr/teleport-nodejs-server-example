@@ -91,7 +91,7 @@ depends on the delivery mode:
   That last fallback is per-peer and silent: the avatar's owner is not told,
   and other peers keep using the relayed URL.
 
-The bundled default avatar (`http_resources/generic_avatar.vrm`) is a
+The bundled default avatar (`http_resources/placeholder_avatar.glb`) is a
 blocky humanoid authored from scratch by `tools/make-placeholder-avatar.js`
 and covered by this project's MIT licence — regenerate it with
 `node tools/make-placeholder-avatar.js`. It is deliberately not the bundled
@@ -104,7 +104,7 @@ better-looking.
 |----------|---------|-------------|
 | `TELEPORT_AVATARS_ENABLED` | `1` (on) | Master switch for avatar negotiation. When off, the server falls back to the legacy static subscene avatar node. |
 | `TELEPORT_AVATARS_VALIDATE` | `1` (on) | Fetch, hash and measure offered avatars. When off, every offer is answered with `using_default` without a download. |
-| `TELEPORT_AVATARS_DEFAULT_URL` | `/generic_avatar.vrm` | Server-relative URL of the default avatar used for `using_default` results. |
+| `TELEPORT_AVATARS_DEFAULT_URL` | `/placeholder_avatar.glb` | Server-relative URL of the default avatar used for `using_default` results. |
 | `TELEPORT_AVATARS_REQUIREMENT` | `optional` | `optional`, `required` or `forbidden` — whether clients must supply an avatar. |
 | `TELEPORT_AVATARS_DEFAULT_AVAILABLE` | `1` (on) | Whether the server will substitute its default. With this off and `REQUIREMENT=required`, unacceptable offers are rejected outright. |
 | `TELEPORT_AVATARS_ALLOW_RELAY` | `1` (on) | Whether accepted avatar URLs may be handed to other clients to fetch. Off means every avatar is re-hosted here — slower and more bandwidth, but no client's URL ever reaches another client. |
