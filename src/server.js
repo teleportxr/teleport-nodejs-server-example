@@ -81,7 +81,7 @@ const assetsPath = path.join(__dirname, '../assets');
 sc.SetAssetsPath(assetsPath);
 const publicPath = path.join(__dirname, '../http_resources');
 sc.SetPublicPath(publicPath);
-sc.Load('scene.json');
+sc.Load(config.scene.path + '.json');
 
 // The client manager allows us to set callbacks for when client events happen:
 var cm = client_manager.getInstance();

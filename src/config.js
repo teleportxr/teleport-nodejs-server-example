@@ -84,6 +84,13 @@ function envFloatList(name, fallback)
 // enforcement, etc.) remain inline in server.js until they too need
 // programmatic access.
 const config = {
+    scene : {
+        // Path to the scene.json file, relative to the server.js working dir.
+        // The scene is loaded once at startup and never reloaded; restart the
+        // server to pick up changes. The default is the example scene bundled
+        // with this repo.
+        path : process.env.TELEPORT_SCENE_PATH || 'scene',
+    },
     avatars : {
         // Phase 5: on by default. The negotiated flow validates offered
         // avatars, imports them (or the default) as scene nodes, and
@@ -241,26 +248,36 @@ const config = {
         distance : envFloat('TELEPORT_FOLLOWER_DISTANCE', 2.0),
         // 'away'     — avatar faces where the camera looks; the user sees its back.
         // 'toward'   — avatar faces the user.
-        // 'velocity' — avatar faces its direction of travel while moving.
-        facing : process.env.TELEPORT_FOLLOWER_FACING || 'away',
+        // 'velocity' — avatar faces its direction of travel while moving, settling back
+        //              to 'away' when it parks.
+        // 'velocity' is the default because a walk cycle only reads correctly when the
+        // body is going the way its feet are pointing; facing 'away' while sidestepping
+        // renders as a moonwalk.
+        facing : process.env.TELEPORT_FOLLOWER_FACING || 'velocity',
         // Target displacement below which the follower parks and sends nothing.
         deadZone : envFloat('TELEPORT_FOLLOWER_DEAD_ZONE', 0.15),
         // Exponential approach time constant, seconds. Larger lags further behind.
         tau : envFloat('TELEPORT_FOLLOWER_TAU', 0.25),
-        // Metres per second the follower will not exceed.
-        maxSpeed : envFloat('TELEPORT_FOLLOWER_MAX_SPEED', 4.0),
+        // Metres per second the follower will not exceed. Held at a walking pace, and
+        // deliberately matched to the walk clip's refSpeed below: the playback rate is
+        // scaled by how far the real speed differs from the rate the clip was authored
+        // for, so a cap above refSpeed is what makes the feet slide. Raising this without
+        // giving the run clip a reachable threshold just plays a faster walk.
+        maxSpeed : envFloat('TELEPORT_FOLLOWER_MAX_SPEED', 1.4),
         // Ground height in the client's stage space. Zero is the floor the client is
         // standing on, which is what the OpenXR stage-space convention gives us.
         groundHeight : envFloat('TELEPORT_FOLLOWER_GROUND_HEIGHT', 0.0),
         // Skeletal animation for the follower: idle when parked, walk when following,
-        // run on a fast step, driven by the follower's own ground speed.
+        // run on a fast step, driven by the follower's own ground speed. One
+        // ApplyAnimation command is sent per connected client whenever the
+        // locomotion state changes.
         //
-        // OFF BY DEFAULT, and this is a client-version dependency, not a taste setting.
+        // This is a client-version dependency, not a taste setting.
         // Playing an animation on a streamed avatar needs a client carrying the sub-scene
         // animation routing: without it the avatar's skeleton lives in a cache the server
         // has never seen, and every ApplyAnimation is silently dropped. Older clients
         // additionally dereference an unresolvable cacheID without a null check and crash.
-        // Turn this on only against clients built from the same source revision.
+        // Turn this off (TELEPORT_FOLLOWER_ANIMATION=0) against clients built without it.
         animation : {
             enabled : envBool('TELEPORT_FOLLOWER_ANIMATION', true),
             // Clips, served from http_resources/. Each needs an extension the client can
