@@ -1,6 +1,6 @@
 # teleport-nodejs-server-example
 
-Example Node.js server for [TeleportXR](https://github.com/teleportxr/teleport-nodejs).
+Example Node.js server for [TeleportXR](https://docs.teleportxr.io).
 
 ## Running
 
