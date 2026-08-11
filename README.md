@@ -23,6 +23,7 @@ All variables are optional. Boolean-like values accept `1`, `true`, or `yes`
 |----------|---------|-------------|
 | `PORT` | `8081` | TCP port the signaling/Express HTTP server listens on. Heroku and similar platforms set this automatically. |
 | `TELEPORT_REQUIRE_TLS` | _unset_ (off) | When on, the server rejects any WebSocket upgrade whose `X-Forwarded-Proto` is not `https`. Use behind a reverse proxy (e.g. Heroku) to refuse plain `ws://` connections that arrived on port 80. |
+| `TELEPORT_SCENE_PATH` | `scene` | Which scene file is initially opened. This is augmented with '.json' and corresponds to a file in the assets folder. |
 
 ### Resource URL advertised to clients
 
