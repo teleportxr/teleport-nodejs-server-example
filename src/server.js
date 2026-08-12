@@ -34,32 +34,34 @@
 // resources (meshes, textures, etc.) from the Express HTTP server.
 // ============================================================================
 
-const teleport_server  = require('teleportxr')
-const client_manager   = require('teleportxr/client/client_manager');
-const webrtc_conn_mgr  = require('teleportxr/connections/webrtcconnectionmanager');
-const MicRouter        = require('./mic-router.js');
-const avatar_nodes     = require('./avatar-nodes.js');
-const client           = require('teleportxr/client/client');
-const scene            = require("teleportxr/scene/scene");
-const resources        = require("teleportxr/scene/resources");
-const signaling        = require("teleportxr/signaling");
-const avatars_proto    = require("teleportxr/protocol/avatars");
-const avatar_validator = require("teleportxr/client/avatar_validator");
-const avatar_importer  = require("teleportxr/client/avatar_importer");
-const oidc_verifier    = require("teleportxr/identity/oidc_verifier");
-const motion           = require("teleportxr/client/motion");
-const avatar_publisher = require('./avatar-publisher.js');
-const express          = require('express');
-const http             = require('http');
-const socketIo         = require('socket.io');
-const custom_player    = require('./custom-player.js');
-const config           = require('./config.js');
+const teleport_server   = require('teleportxr')
+const client_manager    = require('teleportxr/client/client_manager');
+const webrtc_conn_mgr   = require('teleportxr/connections/webrtcconnectionmanager');
+const MicRouter         = require('./mic-router.js');
+const avatar_nodes      = require('./avatar-nodes.js');
+const client            = require('teleportxr/client/client');
+const scene             = require("teleportxr/scene/scene");
+const resources         = require("teleportxr/scene/resources");
+const signaling         = require("teleportxr/signaling");
+const avatars_proto     = require("teleportxr/protocol/avatars");
+const avatar_validator  = require("teleportxr/client/avatar_validator");
+const avatar_importer   = require("teleportxr/client/avatar_importer");
+const manifest_resolver = require("teleportxr/manifest/resolver");
+const oidc_verifier     = require("teleportxr/identity/oidc_verifier");
+const motion            = require("teleportxr/client/motion");
+const avatar_publisher  = require('./avatar-publisher.js');
+const express           = require('express');
+const http              = require('http');
+const socketIo          = require('socket.io');
+const custom_player     = require('./custom-player.js');
+const config            = require('./config.js');
+const scene_source      = require('./scene-source.js');
 
-const WebSocketServer  = require("ws");
+const WebSocketServer   = require("ws");
 
 // Log the version of teleportxr being used
-const fs               = require('fs');
-const path_module      = require('path');
+const fs                = require('fs');
+const path_module       = require('path');
 try
 {
     // Read package.json from node_modules directly to get the teleportxr version
@@ -81,10 +83,21 @@ const assetsPath = path.join(__dirname, '../assets');
 sc.SetAssetsPath(assetsPath);
 const publicPath = path.join(__dirname, '../http_resources');
 sc.SetPublicPath(publicPath);
-sc.Load(config.scene.path + '.json');
+// Where the scene comes from: a file under assets/, or a URL fetched at startup
+// with that file as the fallback. Loading is asynchronous, so it happens at the
+// bottom of this file and the server does not listen until it has a scene — a
+// client must not connect to an empty world while a slow URL is still in flight.
+const sceneSource = new scene_source.SceneSource({
+    scene : sc,
+    assetsPath : assetsPath,
+    path : config.scene.path,
+    url : config.scene.url,
+    fetchTimeoutMs : config.scene.fetchTimeoutMs,
+    maxBytes : config.scene.maxBytes,
+});
 
 // The client manager allows us to set callbacks for when client events happen:
-var cm = client_manager.getInstance();
+var cm            = client_manager.getInstance();
 
 // This is our app's callback for when a new client is to be created.
 function createNewClient(clientID, sigSend)
@@ -161,6 +174,40 @@ const sharedAvatarValidator =
           })
         : null;
 
+// Shared manifest resolver, for the same reason the validator is shared:
+// its LRU is keyed on manifest url, so two clients presenting the same
+// manifest cost one fetch between them. Created only when the operator
+// has opted in, because its presence in the requirements bag is what
+// tells clients this server accepts manifest addresses at all.
+const sharedAvatarManifestResolver =
+    config.avatars.enabled && config.avatars.requirements.manifest
+        ? new manifest_resolver.DefaultAvatarManifestResolver({
+              resolverBase : config.avatars.requirements.manifest.resolver,
+              maxBytes : config.avatars.requirements.manifest.max_bytes,
+              // Stated so a subject's consent entry can be scoped to it.
+              purpose : 'avatar-presentation',
+          })
+        : null;
+
+// Host hook for the app-specific parts of a resolved manifest. This
+// example only reports what it received; a real game would read its own
+// facets here — a loadout, a rank, a language preference — and apply them
+// to the client's session.
+//
+// Only facets this server named in requirements.manifest.requested_facets
+// reach this point, and only those the subject consented to. Everything
+// else is recorded in the receipt as not-projected or consent-missing and
+// its contents are never seen.
+function onManifestProjected(clientID, projection, receipt)
+{
+    if (!projection)
+        return;
+    const names = projection.facets.map((f) => f.name).join(', ');
+    console.log("Client " + clientID + " manifest projected: subject=" + projection.subject +
+                ", outcome=" + (receipt ? receipt.outcome : 'unknown') + ", facets=[" + names +
+                "]");
+}
+
 // Build an AvatarPolicy from the static example-server config block.
 // Pulled out of onClientPostCreate so it's trivial to unit-test in
 // isolation if/when we add tests for the example server.
@@ -221,12 +268,18 @@ function onClientPostCreate(clientID, user)
             client.avatarService.validator = sharedAvatarValidator;
         if (sharedAvatarImporter)
             client.avatarService.importer = sharedAvatarImporter;
+        if (sharedAvatarManifestResolver)
+        {
+            client.avatarService.manifestResolver    = sharedAvatarManifestResolver;
+            client.avatarService.onManifestProjected = onManifestProjected;
+        }
         client.avatarService.allowRelay = config.avatars.allow_relay;
         const policy                    = buildAvatarPolicyForClient(clientID);
         console.log("Issuing avatar policy " + policy.policy_id + " to client " + clientID +
                     " (requirement=" + policy.requirement +
                     ", default_available=" + policy.default_available +
                     ", validate=" + (sharedAvatarValidator ? "on" : "off") +
+                    ", manifests=" + (sharedAvatarManifestResolver ? "on" : "off") +
                     ", relay=" + (config.avatars.allow_relay ? "on" : "off") + ")");
         client.avatarService.sendPolicy(policy);
     }
@@ -479,6 +532,19 @@ console.log("MicRouter: forwarding client microphone audio between connected cli
 // The dashboard uses the writeState functions of the teleport server classes
 // to send html summaries of their state to the dashboard.
 const express_app = express();
+// Behind a platform proxy, X-Forwarded-* is the only source of the client's real
+// address and scheme. Express trusts none of it unless told to, so req.ip is the
+// proxy and req.protocol is always http. TELEPORT_TRUST_PROXY configures that;
+// see parseTrustProxy in scene-source.js for the accepted forms.
+//
+// This governs Express only. The resource-URL auto-detection and
+// TELEPORT_REQUIRE_TLS below read X-Forwarded-Host / X-Forwarded-Proto straight
+// off the raw WebSocket upgrade, before Express sees it, and are unaffected.
+if (config.server.trustProxy !== null)
+{
+    express_app.set('trust proxy', config.server.trustProxy);
+    console.log(`Express trust proxy: ${JSON.stringify(config.server.trustProxy)}`);
+}
 // Log every incoming HTTP request so we can confirm whether resource fetches
 // (e.g. textures referenced by TexturePointer payloads) actually reach Express.
 express_app.use(function(req, res, next) {
@@ -602,43 +668,55 @@ else
     // Disable its weak ETag so only Last-Modified drives conditional responses.
     express_app.use(express.static(publicPath, {etag : false, lastModified : true}));
 }
-// Don't pass express_app to createServer - that would cause it to initalize before websockets is
-// connected
-const http_server = express_app.listen(signaling_port);
-// Only forward genuine WebSocket upgrades to the signaling server. Other Upgrade
-// requests (e.g. h2c from curl/HTTP-2 capable clients) must be rejected so the
-// underlying TCP connection can fall back to a normal HTTP/1.1 request that
-// Express can then serve via express.static.
-http_server.on('upgrade', function upgrade(request, socket, head) {
-    const upgradeHeader  = (request.headers.upgrade || '').toLowerCase();
-    const forwardedProto = (request.headers['x-forwarded-proto'] || '').toLowerCase();
-    console.log("HTTP upgrade request received: " + upgradeHeader + " " + request.url);
-    console.log("  Host header: " + request.headers.host);
-    console.log("  X-Forwarded-Host header: " + request.headers['x-forwarded-host']);
-    console.log("  X-Forwarded-Proto header: " + forwardedProto);
-    if (upgradeHeader !== 'websocket')
-    {
-        socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
-        socket.destroy();
-        return;
-    }
-    // When TELEPORT_REQUIRE_TLS is set, refuse plain ws:// upgrades. Only requests
-    // forwarded by the proxy as https are accepted; clients hitting port 80 will
-    // see a 403 and must reconnect via wss:// on port 443.
-    if (requireTls && forwardedProto !== 'https')
-    {
-        console.warn("Rejecting non-TLS WebSocket upgrade (X-Forwarded-Proto=\"" + forwardedProto +
-                     "\")");
-        socket.write(
-            'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\nTLS required (use wss://)');
-        socket.destroy();
-        return;
-    }
-    const {pathname} = new URL(request.url, 'wss://base.url');
-    wss.handleUpgrade(request, socket, head, function done(ws) {
-        wss.emit('connection', ws, request);
+// Start accepting connections. Called once the scene has loaded, at the bottom
+// of this file. HOST (or TELEPORT_BIND_HOST) pins the bind address so an
+// operator can restrict the server to a private interface without editing this
+// source; unset means Express's default of every interface.
+function startListening()
+{
+    // Don't pass express_app to createServer - that would cause it to initalize before websockets
+    // is connected
+    const http_server = express_app.listen(signaling_port, config.server.bindHost || undefined);
+    http_server.on('listening', function() {
+        const addr = http_server.address();
+        console.log(`Listening on ${addr.address}:${addr.port}` +
+                    (config.server.bindHost ? '' : ' (all interfaces; set HOST to pin one)'));
     });
-});
+    // Only forward genuine WebSocket upgrades to the signaling server. Other Upgrade
+    // requests (e.g. h2c from curl/HTTP-2 capable clients) must be rejected so the
+    // underlying TCP connection can fall back to a normal HTTP/1.1 request that
+    // Express can then serve via express.static.
+    http_server.on('upgrade', function upgrade(request, socket, head) {
+        const upgradeHeader  = (request.headers.upgrade || '').toLowerCase();
+        const forwardedProto = (request.headers['x-forwarded-proto'] || '').toLowerCase();
+        console.log("HTTP upgrade request received: " + upgradeHeader + " " + request.url);
+        console.log("  Host header: " + request.headers.host);
+        console.log("  X-Forwarded-Host header: " + request.headers['x-forwarded-host']);
+        console.log("  X-Forwarded-Proto header: " + forwardedProto);
+        if (upgradeHeader !== 'websocket')
+        {
+            socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+        // When TELEPORT_REQUIRE_TLS is set, refuse plain ws:// upgrades. Only requests
+        // forwarded by the proxy as https are accepted; clients hitting port 80 will
+        // see a 403 and must reconnect via wss:// on port 443.
+        if (requireTls && forwardedProto !== 'https')
+        {
+            console.warn("Rejecting non-TLS WebSocket upgrade (X-Forwarded-Proto=\"" +
+                         forwardedProto + "\")");
+            socket.write(
+                'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\nTLS required (use wss://)');
+            socket.destroy();
+            return;
+        }
+        const {pathname} = new URL(request.url, 'wss://base.url');
+        wss.handleUpgrade(request, socket, head, function done(ws) {
+            wss.emit('connection', ws, request);
+        });
+    });
+}
 
 // Set initial resource URL
 let currentResourceUrl = getResourceUrl();
@@ -723,4 +801,42 @@ else
                 ", position=" + JSON.stringify(config.avatars.subscene.position) + ")");
 }
 
-console.log(`Dashboard: http://localhost:${signaling_port}`);
+// Load the scene, then start listening. Everything above this point registers
+// callbacks and middleware; nothing needs the scene's contents until a client
+// connects, and none can until startListening() has run.
+sceneSource.load()
+    .then(function(info) {
+        console.log(`Scene loaded from ${info.source}: ${info.file}` +
+                    (info.source === 'file' && config.scene.url ? ' (URL fallback)' : ''));
+        // TELEPORT_SCENE_RELOAD=1: re-read (or re-fetch) the scene on SIGHUP.
+        // Connected clients need no special handling — each streaming pass
+        // diffs the scene against what that client has, so removed nodes are
+        // sent as RemoveNodes and new ones are streamed. Nodes belonging to a
+        // client (its origin, its avatar) are left alone.
+        if (config.scene.reload)
+        {
+            process.on('SIGHUP', function() {
+                console.log('SIGHUP: reloading the scene.');
+                sceneSource.reload()
+                    .then((r) => console.log(r.changed ? 'Scene reloaded.'
+                                                       : `Scene not reloaded: ${r.reason}.`))
+                    .catch((err) => console.error(
+                               'Scene reload failed, keeping the current scene: ' + err.message));
+            });
+            console.log('Scene reload on SIGHUP: enabled.');
+        }
+        else
+        {
+            console.log(
+                'Scene reload on SIGHUP: disabled (set TELEPORT_SCENE_RELOAD=1 to opt in).');
+        }
+        startListening();
+        console.log(`Dashboard: http://localhost:${signaling_port}`);
+    })
+    .catch(function(err) {
+        // No scene at all: neither the URL nor the file yielded one. There is
+        // nothing to serve, so fail loudly at boot rather than accepting
+        // clients into an empty world.
+        console.error('Fatal: could not load a scene: ' + err.message);
+        process.exit(1);
+    });

@@ -14,6 +14,8 @@
 // rest of the server reads configuration from env: Heroku and other
 // container hosts have no convenient way to edit checked-in files.
 
+const    scene_source = require('./scene-source.js');
+
 function envBool(name, fallback)
 {
     const v = process.env[name];
@@ -84,12 +86,42 @@ function envFloatList(name, fallback)
 // enforcement, etc.) remain inline in server.js until they too need
 // programmatic access.
 const config = {
+    // Where the process listens, and what it believes about the proxy in front
+    // of it. Read by src/server.js; both matter only to managed hosting, which
+    // boots this server unmodified and cannot patch either into the source.
+    server : {
+        // Address to bind. Unset means Express's default, which is every
+        // interface. HOST is the conventional name; TELEPORT_BIND_HOST is
+        // accepted for symmetry with the rest of this file.
+        bindHost : process.env.HOST || process.env.TELEPORT_BIND_HOST || null,
+        // Express's "trust proxy" setting, which decides whether X-Forwarded-*
+        // headers are believed for req.ip and req.protocol. Null (the default)
+        // leaves Express's own default — trust nothing — in place. See
+        // parseTrustProxy in scene-source.js for the accepted forms.
+        trustProxy : scene_source.parseTrustProxy(process.env.TELEPORT_TRUST_PROXY),
+    },
     scene : {
-        // Path to the scene.json file, relative to the server.js working dir.
-        // The scene is loaded once at startup and never reloaded; restart the
-        // server to pick up changes. The default is the example scene bundled
-        // with this repo.
+        // Path to the scene.json file, relative to the assets directory, without
+        // the extension. Used directly when no URL is configured, and as the
+        // fallback when the URL cannot be fetched. The default is the example
+        // scene bundled with this repo.
         path : process.env.TELEPORT_SCENE_PATH || 'scene',
+        // Fetch the scene from here at startup instead of reading it from disk,
+        // so a hosted world can point straight at its published scene.json. The
+        // fetched file is written into the assets directory (as
+        // _remote_scene.json) and loaded from there, because the loader resolves
+        // font-atlas paths relative to the scene file. Any failure falls back to
+        // `path` above.
+        url : process.env.TELEPORT_SCENE_URL || null,
+        // Re-read (or re-fetch) the scene on SIGHUP, so publishing a scene edit
+        // does not need a redeploy. Off by default: a server that has never been
+        // sent SIGHUP behaves exactly as before either way, but the handler is
+        // worth opting into rather than assuming.
+        reload : envBool('TELEPORT_SCENE_RELOAD', false),
+        // Wall-clock budget for fetching `url`, and a cap on how much will be
+        // accepted. Both apply to the reload fetch as well as the first one.
+        fetchTimeoutMs : envInt('TELEPORT_SCENE_FETCH_TIMEOUT_MS', 15000),
+        maxBytes : envInt('TELEPORT_SCENE_MAX_BYTES', 16_000_000),
     },
     avatars : {
         // Phase 5: on by default. The negotiated flow validates offered
@@ -140,7 +172,45 @@ const config = {
                 : {},
             process.env.TELEPORT_AVATARS_SKELETON
                 ? {skeleton : process.env.TELEPORT_AVATARS_SKELETON}
-                : {}),
+                : {},
+            // Universal Manifest support. Present in the requirements bag
+            // only when enabled: its presence IS how a client learns this
+            // server will accept a manifest address in place of a bare
+            // asset url, so including it while unable to resolve one would
+            // be a lie the client acts on.
+            envBool('TELEPORT_AVATARS_MANIFEST_ENABLED', false) ? {
+                manifest : {
+                    // @context values this deployment has been tested
+                    // against. v0.3 is the stable line; add v0.4 only
+                    // once you have exercised it.
+                    accepted : envList('TELEPORT_AVATARS_MANIFEST_ACCEPTED',
+                                       [ 'https://universalmanifest.net/ns/v0.3' ]),
+                    // Which pointer in the manifest holds the avatar.
+                    // portableIdentity.avatar is the name the published
+                    // Universal Manifest XR fixtures use.
+                    avatar_pointers : envList('TELEPORT_AVATARS_MANIFEST_POINTERS',
+                                              [ 'portableIdentity.avatar' ]),
+                    // The app-specific facets this deployment
+                    // understands. Anything not listed here is never
+                    // projected — a server should not read what it has
+                    // no use for, and the receipt says so honestly.
+                    requested_facets :
+                        envList('TELEPORT_AVATARS_MANIFEST_FACETS', [ 'avatarProfile' ]),
+                    requested_claims : envList('TELEPORT_AVATARS_MANIFEST_CLAIMS', []),
+                    // Tier 0 is signature-only, which is all the
+                    // resolver can actually verify. Raising this
+                    // rejects every manifest until a higher-tier
+                    // verifier exists.
+                    required_trust_tier : envInt('TELEPORT_AVATARS_MANIFEST_TRUST_TIER', 0),
+                    // A manifest is a small JSON document; this is
+                    // three orders of magnitude below max_file_bytes
+                    // on purpose.
+                    max_bytes : envInt('TELEPORT_AVATARS_MANIFEST_MAX_BYTES', 262_144),
+                    resolver :
+                        process.env.TELEPORT_AVATARS_MANIFEST_RESOLVER || 'https://myum.net/',
+                },
+            }
+                                                                : {}),
         // Proof block — phase 2 never demands a proof.
         proof : {
             required : envBool('TELEPORT_AVATARS_PROOF_REQUIRED', false),

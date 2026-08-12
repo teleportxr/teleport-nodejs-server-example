@@ -1,8 +1,8 @@
 {
 	"environment": {
-		"background_texture": "/envCloudyCubemap.ktx2",
-		"diffuse_cubemap": "/diffuseCloudyCubemap.ktx2",
-		"specular_cubemap": "/specularCloudyCubemap.ktx2"
+		"background_texture": {"url":"/envCloudyCubemap.ktx2","axes_standard":"engineering"},
+		"diffuse_cubemap": {"url":"/diffuseCloudyCubemap.ktx2","axes_standard":"engineering"},
+		"specular_cubemap": {"url":"/specularCloudyCubemap.ktx2","axes_standard":"engineering"}
 	},
 	"meshes": {
 		"/generic_avatar.vrm": {

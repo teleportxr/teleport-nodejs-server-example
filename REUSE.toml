@@ -61,7 +61,7 @@ SPDX-License-Identifier = "CC-BY-4.0"
 
 # VRM avatar and VRMA animation assets
 [[annotations]]
-path = ["http_resources/generic_avatar.vrm", "http_resources/*.vrma"]
+path = ["http_resources/generic_avatar.vrm", "http_resources/*.vrma", "http_resources/roderick_avaturn.glb"]
 SPDX-FileCopyrightText = "2024-2026 Teleport XR Ltd <contact@teleportxr.io>"
 SPDX-License-Identifier = "CC-BY-4.0"
 
