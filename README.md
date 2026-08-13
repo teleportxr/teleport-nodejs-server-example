@@ -25,6 +25,34 @@ All variables are optional. Boolean-like values accept `1`, `true`, or `yes`
 | `TELEPORT_REQUIRE_TLS` | _unset_ (off) | When on, the server rejects any WebSocket upgrade whose `X-Forwarded-Proto` is not `https`. Use behind a reverse proxy (e.g. Heroku) to refuse plain `ws://` connections that arrived on port 80. |
 | `TELEPORT_SCENE_PATH` | `scene` | Which scene file is initially opened. This is augmented with '.json' and corresponds to a file in the assets folder. |
 
+### Scene assets with external textures
+
+A `.glb`/`.vrm` may either embed its textures or reference them as separate
+files beside it. The second form makes each of those files a resource in its
+own right: the client has nothing to resolve the asset's own image URIs against
+unless the server streams them too, and no material or node in the scene names
+them. So the scene file's `meshes` block declares them, keyed by mesh url:
+
+```json
+"meshes": {
+  "/generic_avatar.vrm": { "axes_standard": "gl", "textures": ["/texture.png"] },
+  "/props/chair.glb":    { "axes_standard": "gl" }
+}
+```
+
+* With a `textures` array, that list is authoritative.
+* Without one, the asset is read from `http_resources/` and its external image
+  URIs are used instead — so the common case needs no bookkeeping. URIs are
+  resolved against the mesh's own url (`tex.png` under `/props/chair.glb`
+  becomes `/props/tex.png`), which is exactly what the client does with the same
+  URI. An asset that is not a local file, or embeds all its textures,
+  contributes nothing.
+
+Each declared texture is streamed to any client that is streamed the mesh, and
+refcounted: a texture two meshes share is held until neither is streamed. This
+is server-owned scene content; a client-supplied avatar must still be
+self-contained and is refused if it references external files.
+
 ### Resource URL advertised to clients
 
 The server tells each client where to fetch resources (meshes, textures, etc.)
