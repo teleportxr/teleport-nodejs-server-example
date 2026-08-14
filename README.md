@@ -25,6 +25,38 @@ All variables are optional. Boolean-like values accept `1`, `true`, or `yes`
 | `TELEPORT_REQUIRE_TLS` | _unset_ (off) | When on, the server rejects any WebSocket upgrade whose `X-Forwarded-Proto` is not `https`. Use behind a reverse proxy (e.g. Heroku) to refuse plain `ws://` connections that arrived on port 80. |
 | `TELEPORT_SCENE_PATH` | `scene` | Which scene file is initially opened. This is augmented with '.json' and corresponds to a file in the assets folder. |
 
+### Which way is up: the scene's axes standard
+
+A scene file states the frame its own node poses are written in, with a
+top-level `axes_standard`:
+
+```json
+{
+  "axes_standard": "engineering",
+  "nodes": { "...": {} }
+}
+```
+
+Accepted values are `gl` (Y-up right-handed, the glTF/Three.js convention),
+`engineering` (Z-up right-handed), `unity` and `unreal`. **Omitting it means
+`gl`** — every mesh the server streams is a glTF-family file and so already
+Y-up, which makes it the setting that needs no conversion anywhere.
+
+This is an authoring choice, not a wire constraint. Each client declares its own
+standard when it connects and the server converts every pose it sends into that
+frame, and every pose it receives back out of it, so a scene renders identically
+whatever it is written in. The setting matters to whoever writes the JSON, and
+to server-side code that reads poses.
+
+Note it is distinct from the per-asset `axes_standard` in the `environment` and
+`meshes` blocks below, which describe the frame of one *file* rather than of the
+scene. There, an absent value in `meshes` means "the same as the scene", while a
+bare url in `environment` means `gl`.
+
+> A scene written before this key existed was Z-up. Add
+> `"axes_standard": "engineering"` to keep it as it was, or re-author its poses
+> Y-up.
+
 ### Scene assets with external textures
 
 A `.glb`/`.vrm` may either embed its textures or reference them as separate
